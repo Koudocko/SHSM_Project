@@ -1,0 +1,169 @@
+@import url('https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700;900&display=swap');
+
+* {
+    margin: 0; 
+    padding: 0; 
+    box-sizing: border-box; 
+    font-family: 'Poppins', sans-serif;
+}
+
+body {
+    display: flex; 
+    justify-content: center; 
+    align-items: center; 
+    min-height: 100vh;
+    background-image: url(images/backgroundImage.png);
+    background-repeat: no-repeat;
+    background-size: cover;
+}
+
+.box {
+    position: relative;
+    width: 380px; 
+    height: 420px; 
+    background: #63236a;
+    border-radius: 8px;
+    overflow: hidden;
+}
+
+.box::before {
+    content: ''; 
+    position: absolute; 
+    top: -50%; 
+    left: -50%; 
+    width: 380px; 
+    height: 420px; 
+    background: linear-gradient(0deg, transparent, white, white);
+    transform-origin: bottom right;
+    animation: animate 6s linear infinite;
+}
+
+.box::after {
+    content: ''; 
+    position: absolute; 
+    top: -50%; 
+    left: -50%; 
+    width: 380px; 
+    height: 420px; 
+    background: linear-gradient(0deg, transparent, white, white );
+    transform-origin: bottom right;
+    animation: animate 6s linear infinite;
+    animation-delay: -3s; 
+}
+
+@keyframes animate {
+     
+    0% {
+        transform: rotate(0deg);
+    }  
+    100% {
+        transform: rotate(360deg);
+    } 
+
+}
+
+.form {
+    position: absolute;
+    inset: 2px; 
+    border-radius: 0px;
+    background: #63236a;
+    z-index: 10;
+    padding: 50px 40px; 
+    display: flex; 
+    flex-direction: column;
+}
+
+.form h2 {
+    color: white;
+    font-weight: 500;
+    text-align: center;
+    letter-spacing: 0.1rem;
+}
+
+.inputForm {
+    position: relative; 
+    width: 300px; 
+    margin-top: 35px; 
+}
+
+.inputForm input {
+    position: relative; 
+    width: 100%; 
+    padding: 20px 10px 10px; 
+    background: transparent;
+    border: none; 
+    outline: none; 
+    color: #9f76b4; 
+    font-size: 1rem;
+    letter-spacing: 0.05em; 
+    z-index: 10;
+}
+
+.inputForm span {
+    position: absolute;
+    left: 0; 
+    padding: 20px 0px 10px; 
+    font-size: 1rem; 
+    color: white;
+    pointer-events: none;
+    letter-spacing: 0.05em;
+    transition: 0.5s;
+}
+
+.inputForm input:valid ~ span,
+.inputForm input:focus ~ span {
+    color: #9f76b4;  
+    transform: translateX(0px) translateY(-34px);
+    font-size: 0.75em;
+}
+
+.inputForm i {
+    position: absolute; 
+    left: 0; 
+    bottom: 0; 
+    width: 100%; 
+    height: 2px; 
+    background-color: white;
+    border-radius: 4px;
+    transition: 0.5s;
+    z-index: 9;
+    pointer-events: none; 
+}
+
+.inputForm input:valid ~ i,
+.inputForm input:focus ~ i {
+    height: 44px; 
+} 
+
+.links {
+    display: flex; 
+    justify-content: space-between;
+}
+
+.links a {
+    margin: 10px 0; 
+    font-size: 0.75em; 
+    color: #9f76b4; 
+    text-decoration: none;
+}
+
+.links a:hover, 
+.link a:nth-child(2) {
+    color: white; 
+}
+
+input[type="submit"] {
+    border: none; 
+    outline: none;
+    background: white;
+    padding: 11px 25px; 
+    margin-top: 10px;
+    border-radius: 4px;
+    font-weight: 600;
+    cursor: pointer;
+    color: #9f76b4;
+}
+
+input[type="submit"]:active {
+    opacity: 0.8;
+}
