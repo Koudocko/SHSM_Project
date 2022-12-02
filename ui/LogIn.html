@@ -1,0 +1,54 @@
+<!DOCTYPE html>
+<html Lang="en">
+    <head>
+        <meta charset="UTF-8">
+        <title>SHSM Application</title>
+        <link rel="stylesheet" href="style.css">
+    </head>
+    <body>
+        <div class="box sign-in" id="sign-in" style="display: inline-grid; grid-template-columns: 2;">
+            <div class="form"> 
+                <h2>Login</h2>
+                <div class="inputForm">
+                    <input type="text" required="required"></inpput>    
+                    <span>Email</span>
+                    <i></i>
+                </div>
+                <div class="inputForm">
+                    <input type="password" required="required"></inpput>    
+                    <span>Password</span>
+                    <i></i>
+                </div>
+                <div class="links">
+                    <button href="#" class="SignupBtnLink" onclick="document.getElementById('sign-up').scrollIntoView();">Signup</button>
+                </div>
+                <input type="submit" value="Login">
+            </div>
+        </div>
+
+        <div class="box sign-up" id="sign-up" style="height: 500px;">
+            <div class="form"> 
+                <h2>Sign Up</h2>
+                <div class="inputForm">
+                    <input type="text" required="required"></inpput>    
+                    <span>Email</span>
+                    <i></i>
+                </div>
+                <div class="inputForm">
+                    <input type="password" required="required"></inpput>    
+                    <span>Password</span>
+                    <i></i>
+                </div>
+                <div class="inputForm">
+                    <input type="password" required="required"></inpput>    
+                    <span>Confirm Password</span>
+                    <i></i>
+                </div>
+                <div class="links">
+                    <button href="#" onclick="document.getElementById('sign-in').scrollIntoView();">Login</button>
+                </div>
+                <input type="submit" value="Create Account">
+            </div>
+        </div>
+    </body>
+</html>
