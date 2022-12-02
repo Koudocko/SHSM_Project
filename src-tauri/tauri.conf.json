@@ -58,7 +58,8 @@
         "height": 600,
         "resizable": true,
         "title": "SHSM",
-        "width": 800
+        "width": 800,
+        "url": "login.html"
       }
     ]
   }
