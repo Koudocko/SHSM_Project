@@ -10,7 +10,7 @@
         <!-- Login Form -->
         <div class="box sign-in" id="sign-in" style="display: inline-grid; grid-template-columns: 2;">
             <div class="form"> 
-                <h2>Log in</h2>
+                <h2>Login</h2>
                 <div class="inputForm">
                     <input type="text" required="required"></inpput>    
                     <span>Email</span>
@@ -22,16 +22,18 @@
                     <i></i>
                 </div>
                 <div class="links">
-                    <button href="#" class="SignupBtnLink" onclick="document.getElementById('sign-up').scrollIntoView({behavior: 'smooth', block: 'center', inline: 'center'});">Sign up</button>
+                    <button href="#" class="SignupBtnLink" onclick="document.getElementById('sign-up').scrollIntoView({behavior: 'smooth', block: 'center', inline: 'center'});">Signup</button>
                 </div>
-                <input type="submit" value="Login">
+                <a href="home.html">
+                    <input type="submit" value="Login">
+                </a>
             </div>
         </div>
 
         <!-- Signup Form -->
         <div class="box sign-up" id="sign-up" style="height: 500px;">
             <div class="form"> 
-                <h2>Sign up</h2>
+                <h2>Sign Up</h2>
                 <div class="inputForm">
                     <input type="text" required="required"></inpput>    
                     <span>Email</span>
@@ -48,14 +50,14 @@
                     <i></i>
                 </div>
                 <div class="links">
-                    <button href="#" onclick="document.getElementById('sign-in').scrollIntoView({behavior: 'smooth', block: 'center', inline: 'center'});">Log in</button>
-
+                    <button href="#" onclick="document.getElementById('sign-in').scrollIntoView({behavior: 'smooth', block: 'center', inline: 'center'});">Login</button>
                 </div>
-                <input type="submit" value="Create Account">
+                <a href="login.html">
+                    <input type="submit" value="Create Account">
+                </a>
             </div>
         </div>
-
-        <!-- Script Links  -->
+        <!-- Script Links -->
         <script src="main.js"></script>
     </body>
 </html>

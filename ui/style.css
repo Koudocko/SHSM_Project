@@ -176,6 +176,7 @@ input[type="submit"] {
     font-weight: 600;
     cursor: pointer;
     color: #9f76b4;
+    width: 300px; 
 }
 
 input[type="submit"]:active {
