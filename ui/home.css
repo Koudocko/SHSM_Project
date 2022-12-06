@@ -1,11 +1,9 @@
 body {
-    display: grid; 
-    grid-template-areas: 'left center right';
-    grid-template-columns: repeat(3, 1fr); 
-    grid-template-rows: 80px; 
-    grid-gap: 567px;
-    background-color: pink; 
-    overflow: hidden; 
+    display: flex;
+    overflow: hidden;
+    flex-flow: column wrap; 
+    margin: 0;
+    align-content: flex-end;
 }
 
 .scroll-box {
@@ -14,7 +12,6 @@ body {
     overflow: scroll; 
     grid-area: right; 
     max-width: 100%; 
-    margin: 0;
 }
 
 input[type="submit"] {
