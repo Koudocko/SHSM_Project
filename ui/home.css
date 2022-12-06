@@ -1,14 +1,15 @@
 body {
     display: grid; 
-    grid-template-areas: 'left center right';
-    grid-template-columns: repeat(3, 1fr); 
+    grid-template-areas: 'left right';
+    grid-template-columns: auto auto; 
     grid-template-rows: 80px; 
-    grid-gap: 567px;
+    grid-gap: 80%;
     background-color: pink; 
     overflow: hidden; 
 }
 
 .scroll-box {
+    position: relative;
     height: 100vh; 
     width: 300px; 
     overflow: scroll; 
