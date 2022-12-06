@@ -1,0 +1,23 @@
+body {
+    display: grid; 
+    grid-template-areas: 'left center right';
+    grid-template-columns: repeat(3, 1fr); 
+    grid-template-rows: 80px; 
+    grid-gap: 519px;
+    background-color: pink; 
+    overflow: hidden; 
+}
+
+.scroll-box {
+    height: 100vh; 
+    width: 300px; 
+    overflow: scroll; 
+    grid-area: right; 
+    max-width: 100%; 
+}
+
+input[type="submit"] {
+    width: 100%;
+    height: 100px;
+}
+
