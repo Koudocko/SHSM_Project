@@ -1,5 +1,24 @@
 body {
+    overflow: hidden;
+}
+
+.carousel-wrapper {
+    background-color: red;
+    width: 158.35vh;
+    height: 100vh;
+    float: left;
+}
+
+.carousel-image {
+    max-width: 158.35vh;
+    max-height: 100vh;
+}
+.scroll-wrapper {
+    background-color: red;
     display: flex;
+    flex: 1;
+    float: right;
+    width: 300px;
     overflow: hidden;
     flex-flow: column wrap; 
     margin: 0;
@@ -10,6 +29,7 @@ body {
     height: 100vh; 
     width: 300px; 
     overflow: scroll; 
+    overflow-x: hidden;
     grid-area: right; 
     max-width: 100%; 
 }
