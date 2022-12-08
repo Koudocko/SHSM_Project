@@ -55,10 +55,10 @@
     "windows": [
       {
         "fullscreen": false,
-        "height": 600,
-        "resizable": true,
+        "height": 754,
+        "resizable": false,
         "title": "SHSM",
-        "width": 800,
+        "width": 1485,
         "url": "login.html"
       }
     ]

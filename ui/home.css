@@ -1,18 +1,25 @@
 body {
     overflow: hidden;
+    margin-left: auto;
+    margin-right: auto;
+    width: 1495px;
 }
 
 .carousel-wrapper {
+    background-image: contain;
+    background: no-repeat;
     background-color: red;
-    position: relative; 
-    width: 1100px;
-    height: 100vh;
+    width: 1195px;
+    /*width: 79.9vw;
+    height: 100vh;*/
+    margin: 0;
+    padding: 0;
     float: left;
 }
 
 .carousel-image {
-    max-width: 158.35vh;
-    max-height: 100vh;
+    max-width: 100%;
+    max-height: 100%;
 }
 .scroll-wrapper {
     background-color: red;
@@ -33,6 +40,7 @@ body {
     overflow-x: hidden;
     grid-area: right; 
     max-width: 100%; 
+    padding: 0;;
 }
 
 input[type="submit"] {
@@ -40,3 +48,17 @@ input[type="submit"] {
     height: 100px;
 }
 
+.event-btn {
+    width: 300px;
+    height: 100px;
+    border: 2px solid white;
+    box-shadow: inset 0 0 0 pink;
+    color: white;
+    background-color: black;
+    border-radius: 4px;
+    transition: ease-out 0.3s;
+}
+
+.event-btn:hover {
+    box-shadow: inset 300px 0 0 0 pink;
+}
