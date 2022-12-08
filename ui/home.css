@@ -4,7 +4,8 @@ body {
 
 .carousel-wrapper {
     background-color: red;
-    width: 158.35vh;
+    position: relative; 
+    width: 1100px;
     height: 100vh;
     float: left;
 }
