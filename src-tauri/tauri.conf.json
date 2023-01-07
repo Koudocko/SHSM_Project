@@ -54,7 +54,7 @@
     },
     "windows": [
       {
-        "fullscreen": false,
+        "fullscreen": true,
         "height": 754,
         "resizable": false,
         "title": "SHSM",
