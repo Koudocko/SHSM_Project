@@ -1,6 +1,23 @@
 .nav-item:hover {
     color: white;
 }
+
+.image-one h3:hover {
+    color: #8F4B96;
+    transition: color .3s ease-in-out, box-shadow .3s ease-in-out;
+}
+
+.image-two h3:hover {
+    color: #8F4B96;
+    transition: color .3s ease-in-out, box-shadow .3s ease-in-out;
+}
+
+.image-three h3:hover {
+    color: #8F4B96;
+    transition: color .3s ease-in-out, box-shadow .3s ease-in-out;
+}
+
+
 .carousel-item {
     height: 65vh;
     min-height: 350px;
@@ -9,7 +26,7 @@
     -moz-background-size: cover;
     -o-background-size: cover;
     background-size: cover
-    }
+}
 
 #mainNavbar {
     padding-left: 50px;
