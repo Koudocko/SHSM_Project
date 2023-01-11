@@ -1,0 +1,108 @@
+body {
+    background-image: url('images/webb.png');
+    background-size: fill;
+}
+
+ul {
+    list-style-type: none;
+    padding: 10px;
+    margin: 0;
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: center;
+}
+
+li img {
+    width: 871px;
+    height: 282px;
+    margin: 20px;
+    border: 2px solid #ccb4dc;
+    border-radius: 10px;
+    box-shadow: 0 4px 8px 0 rgba(0, 0, 0, 0.2), 0 6px 20px 0 rgba(0, 0, 0, 0.19);
+    background-color: white;
+}
+    
+h1 {
+    color: white;
+    text-align: center;
+    padding: 20px;
+    box-shadow: 0 4px 8px 0 rgba(0, 0, 0, 0.2), 0 6px 20px 0 rgba(0, 0, 0, 0.19);
+    background-color: #74347c;
+    margin: 0;
+    padding: 10px;
+    margin-top: 60px; 
+}
+
+nav {
+    background-color: #ccb4dc; /* some background color */
+    width: 100%;
+    display: flex;
+    justify-content: space-between;
+    position: fixed; /* this makes the navbar stick to the top */
+    top: 0; /* this aligns the navbar to the top */
+    left: 0;
+    z-index: 1;
+  }
+  
+nav ul {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+    display: flex;
+    align-items: center;
+  }
+  
+nav ul li {
+    padding: 10px;
+}
+  
+nav ul li a {
+    color: white;
+    text-decoration: none;
+  }
+
+#background {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    z-index: 999;
+}
+
+#mainNavbar {
+    padding-left: 50px;
+    padding-top: 20px;
+
+}
+
+.navbar-dark .navbar-brand {
+    font-family: 'Source Serif Pro', serif
+}
+.navbar-nav .nav-link {
+    font-family: 'Source Serif Pro', serif
+}
+.display-4 {
+    font-family: 'Source Serif Pro', serif
+}
+.lead {
+    font-family: 'Source Serif Pro', serif
+}
+.navbar.scrolled {
+    background: #8F4B96;
+    transition: background 500ms
+}
+.font-weight-light {
+    font-family: 'Source Serif Pro', serif
+}
+
+.certificate {
+    /* other styles */
+    transition: transform 0.2s, box-shadow 0.2s;
+  }
+  
+  .certificate:hover {
+    transform: scale(1.1);
+    box-shadow: 0 0 15px #8F4B96;
+    transition: transform 0.2s, box-shadow 0.2s;
+  }
