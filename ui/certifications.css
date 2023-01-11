@@ -76,9 +76,20 @@ nav ul li a {
 
 }
 
-.navbar-dark .navbar-brand {
-    font-family: 'Source Serif Pro', serif
+.navbar-brand {
+    transition: transform 0.2s, box-shadow 0.2s;
 }
+
+.navbar-brand:hover {
+    transform: scale(1.2);
+    transition: transform 0.2s, box-shadow 0.2s;
+}
+
+.navbar-dark .navbar-brand {
+    font-family: 'Source Serif Pro', serif;
+    color: white;
+}
+
 .navbar-nav .nav-link {
     font-family: 'Source Serif Pro', serif
 }
@@ -101,8 +112,8 @@ nav ul li a {
     transition: transform 0.2s, box-shadow 0.2s;
   }
   
-  .certificate:hover {
+.certificate:hover {
     transform: scale(1.1);
     box-shadow: 0 0 15px #8F4B96;
     transition: transform 0.2s, box-shadow 0.2s;
-  }
+}
