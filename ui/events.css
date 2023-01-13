@@ -1,3 +1,4 @@
+
 body {
     font-family: Arial, sans-serif;
     background-color: #ccb4dc;
@@ -13,6 +14,28 @@ h1 {
     padding-top: 65px;
     margin-top: 60px; 
 }
+
+.signed-up {
+    display: none;
+    /* other styles */
+  }
+
+  @keyframes signedUp {
+    0% {
+      opacity: 0;
+      transform: translateY(-10px);
+    }
+    100% {
+      opacity: 1;
+      transform: translateY(0);
+    }
+  }
+
+  .signed-up {
+    display: none;
+    animation: signedUp 0.5s ease-in-out;
+    /* other styles */
+  }
 
 .event-container {
     display: flex;
@@ -56,6 +79,11 @@ h1 {
 
 .event-signup:hover {
     background-color: #ccb4dc;
+}
+
+.withdrawn-button {
+    background-color: green;
+    color: white;
 }
 
 #event-signup-form {
