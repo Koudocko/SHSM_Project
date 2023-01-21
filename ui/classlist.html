@@ -1,0 +1,50 @@
+<!DOCTYPE html>
+
+<html>
+
+    <head>
+        <link rel="stylesheet" href="classlist.css">
+    </head>
+
+    <body>
+        <div class="container">
+            <h1>Student Login Information</h1>
+            <table>
+              <tr>
+                <th>Name</th>
+                <th>Username</th>
+                <th>Password</th>
+                <th>Actions</th>
+              </tr>
+              <tr>
+                <td class="name1">john doe</td>
+                <td class="username1">johndoe</td>
+                <td class="password1">
+                    <span class="password-text1">hello<span>
+                </td>
+                <td>
+                  <button class="edit-btn">edit</button>
+                </td>
+              </tr>
+              <!-- Repeat the table row for each student -->
+            </table>
+          
+            <div class="modal" id="edit-modal">
+              <div class="modal-content">
+                <span class="close-btn">&times;</span>
+                <h2>Edit Student Information</h2>
+                <form>
+                  <label for="edit-name">Name:</label>
+                  <input type="text" id="edit-name" value="John Doe" required>
+                  <label for="edit-username">Username:</label>
+                  <input type="text" id="edit-username" value="johndoe" required>
+                  <label for="edit-password">Password:</label>
+                  <input type="" id="edit-password" value="********" required>
+                  <button type="submit" class="save-btn">Save</button>
+                </form>
+              </div>
+            </div>
+
+        <script src="classlist.js"></script>
+    </body>
+</html>

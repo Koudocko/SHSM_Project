@@ -1,0 +1,122 @@
+.container {
+    max-width: 800px;
+    margin: 0 auto;
+  }
+  
+  h1 {
+    color: #8F4B96;
+  }
+  
+  table {
+    width: 100%;
+    border-collapse: collapse;
+  }
+  
+  th, td {
+    border: 1px solid #dddddd;
+    padding: 8px;
+    text-align: left;
+  }
+  
+  th {
+    background-color: #8F4B96;
+    color: white;
+  }
+  
+  .edit-btn, .reset-btn {
+    background-color: #8F4B96;
+    color: white;
+    border: none;
+    padding: 5px 10px;
+    cursor: pointer;
+  }
+  
+  .edit-btn:hover, .reset-btn:hover {
+    background-color: #6B3E72;
+  }
+  
+
+
+
+  /* Add styles for the modals */
+
+.modal {
+    display: none; /* hidden by default */
+    position: fixed; /* stay in place */
+    z-index: 1; /* sit on top */
+    left: 0;
+    top: 0;
+    width: 100%; /* full width */
+    height: 100%; /* full height */
+    overflow: auto; /* enable scroll if needed */
+    background-color: rgba(0, 0, 0, 0.4); /* black w/ opacity */
+  }
+  
+  .modal-content {
+    background-color: #fefefe;
+    margin: 15% auto; /* 15% from the top and centered */
+    padding: 20px;
+    border: 1px solid #888;
+    width: 80%; /* Could be more or less, depending on screen size */
+  }
+  
+.close-btn {
+    color: #aaa;
+    float: right;
+    font-size: 28px;
+    font-weight: bold;
+}
+    
+    .close-btn:hover, .close-btn:focus {
+    color: black;
+    text-decoration: none;
+    cursor: pointer;
+    }
+    
+    /* Add styles for the input fields and buttons in the modals */
+    form label {
+    display: block;
+    margin-bottom: 0.5em;
+    }
+    
+    form input[type="text"], form input[type="password"] {
+    width: 100%;
+    padding: 12px 20px;
+    margin: 8px 0;
+    box-sizing: border-box;
+    border: 1px solid #ccc;
+    border-radius: 4px;
+    }
+    
+    form button[type="submit"] {
+    width: 100%;
+    background-color: #8F4B96;
+    color: white;
+    padding: 14px 20px;
+    margin: 8px 0;
+    border: none;
+    border-radius: 4px;
+    cursor: pointer;
+    }
+    
+    form button[type="submit"]:hover {
+    background-color: #6B3E72;
+    }
+
+    /* Add styles for the toggle password buttons */
+.toggle-password-btn {
+    background: transparent;
+    border: none;
+    color: #8F4B96;
+    cursor: pointer;
+    font-size: 0.8em;
+    padding: 0;
+  }
+  
+  .toggle-password-btn:hover {
+    color: #6B3E72;
+  }
+
+    
+    
+  
