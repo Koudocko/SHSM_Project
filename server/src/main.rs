@@ -3,7 +3,7 @@ use std::{
     net::{TcpListener, TcpStream},
 };
 
-const SOCKET: &str = "192.168.2.241:7878";
+const SOCKET: &str = "192.168.2.5:7878";
 
 fn handle_connection(mut stream: TcpStream) {
     let buf_reader = BufReader::new(&mut stream);
@@ -15,7 +15,7 @@ fn handle_connection(mut stream: TcpStream) {
 
     println!("Request: {:#?}", http_request);
 
-    let response = "HTTP/1.1 200 OK\r\n\r\n";
+    let response = "pong\n\n";
     stream.write_all(response.as_bytes()).unwrap();
 }
 

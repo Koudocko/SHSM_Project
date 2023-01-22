@@ -8,23 +8,7 @@ use std::{
     net::{TcpListener, TcpStream, ToSocketAddrs},
     collections::HashMap,
 };
-
-struct Shsm{
-
-}
-
-struct Certification{
-
-}
-
-#[derive(Clone)]
-enum Page{
-    Certifications,
-    ShsmSelection,
-    Events,
-    Login,
-    Home
-}
+use netstruct::*;
 
 static mut CURRENT_PAGE: Page = Page::Login;
 const SOCKET: &str = "als-kou.ddns.net:7878";
@@ -51,20 +35,21 @@ fn sync_elements(){
 
 #[tokio::main]
 async fn main(){
-    // let mut stream = TcpStream::connect(SOCKET).unwrap();
-    // stream.write_all("Joe biden".as_bytes()).unwrap();
-    // stream.shutdown(std::net::Shutdown::Write).unwrap();
+    let request = "ping\n\n";
 
-    // let buf_reader = BufReader::new(&mut stream);
-    // let http_request: Vec<_> = buf_reader
-    //     .lines()
-    //     .map(|result| result.unwrap())
-    //     .take_while(|line| !line.is_empty())
-    //     .collect();
+    let mut stream = TcpStream::connect(SOCKET).unwrap();
+    stream.write_all(request.as_bytes()).unwrap();
 
-    // println!("Request: {:#?}", http_request);
+    let buf_reader = BufReader::new(&mut stream);
+    let response: Vec<_> = buf_reader
+        .lines()
+        .map(|result| result.unwrap())
+        .take_while(|line| !line.is_empty())
+        .collect();
 
-    tauri::Builder::default()
-        .run(tauri::generate_context!())
-        .expect("error while running tauri application");
+    println!("Response: {:#?}", response);
+
+    // tauri::Builder::default()
+    //     .run(tauri::generate_context!())
+    //     .expect("error while running tauri application");
 }
