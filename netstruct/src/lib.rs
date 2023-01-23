@@ -1,5 +1,5 @@
 use serde::{Serialize, Deserialize};
-use diesel::Queryable;
+use serde_json::to_vec;
 use std::{
     io::{prelude::*, BufReader},
     net::TcpStream
@@ -7,9 +7,9 @@ use std::{
 
 #[derive(Serialize, Deserialize)]
 pub struct Account{
-    pub mode: String,
     pub username: String,
-    pub password: String,
+    pub hash: [[u8; 32]; 2],
+    pub salt: [[u8; 32]; 2],
 }
 
 #[derive(Clone)]
@@ -21,23 +21,26 @@ pub enum Page{
     Home
 }
 
-#[derive(Serialize, Deserialize, Queryable)]
-pub struct Entry{
-    pub key: String,
-    pub val: String
+#[derive(Serialize, Deserialize, Debug)]
+pub struct Package{
+    pub header: String,
+    pub payload: String
 }
 
-pub fn package_stream(stream: &mut TcpStream)-> Vec<String>{
-    BufReader::new(stream)
+pub fn write_stream(stream: &mut TcpStream, package: Package)-> Result<(), std::io::Error>{
+    let buf = &mut serde_json::to_vec(&package)?;
+    buf.push('\n' as u8);
+    stream.write_all(buf)?;
+
+    Ok(())
+}
+
+pub fn read_stream(stream: &mut TcpStream)-> Package{
+    let buffer: String = BufReader::new(stream)
         .lines()
-        .map(|result|{
-            if let Ok(result) = result{
-                result
-            }
-            else{
-                String::new()
-            }
-        })
+        .map(|result| result.unwrap())
         .take_while(|line| !line.is_empty())
-        .collect()
+        .collect();
+
+    serde_json::from_str(&buffer).unwrap()
 }
