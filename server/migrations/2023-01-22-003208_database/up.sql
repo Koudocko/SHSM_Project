@@ -10,7 +10,7 @@ CREATE TABLE test (
     CONSTRAINT abc PRIMARY KEY (id)
 );
 
-CREATE TABLE x (
+CREATE TABLE j (
     id numeric NOT NULL,
-    CONSTRAINT i2 PRIMARY KEY (id)
+    CONSTRAINT abcd PRIMARY KEY (id)
 );
