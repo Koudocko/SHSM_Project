@@ -2,37 +2,35 @@ use std::{
     io::{prelude::*, BufReader},
     net::{TcpListener, TcpStream},
 };
+
 use netstruct::*;
 
 const SOCKET: &str = "192.168.2.5:7878";
 
-fn exists_in_database(entry: &str)-> bool{ true }
+fn exists_in_database(entry: &str)-> bool{ false }
 
 fn handle_connection(mut stream: TcpStream) {
-    let buf_reader = BufReader::new(&mut stream);
-    let request: Vec<_> = buf_reader
-        .lines()
-        .map(|result| result.unwrap())
-        .take_while(|line| !line.is_empty())
-        .collect();
+    let request = read_stream(&mut stream);
+    println!("Request: {:?}", request);
 
-    println!("Request: {:#?}", request);
-
-    let response = match request[0].as_str(){
-        "EXISTS" =>{
-            if exists_in_database(&request[1]){
-                "GOOD\n\n"
+    let response = match request.header.as_str(){
+        "CHECK_ACCOUNT" =>{
+            if exists_in_database(&request.payload){
+                "EXISTS\n\n"
             }
             else{
-                "BAD\n\n"
+                "!EXISTS\n\n"
             }
+        }
+        "CREATE_ACCOUNT" =>{
+            ""
         }
         _ =>{
             ""
         }
-    };
+    }.to_owned();
 
-    stream.write_all(response.as_bytes()).unwrap();
+    write_stream(&mut stream, Package{ header: String::from("GOOD"), payload: response});
 }
 
 fn main() {
