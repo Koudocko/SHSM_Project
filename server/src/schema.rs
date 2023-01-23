@@ -20,15 +20,8 @@ diesel::table! {
     }
 }
 
-diesel::table! {
-    x (id) {
-        id -> Numeric,
-    }
-}
-
 diesel::allow_tables_to_appear_in_same_query!(
     j,
     test,
     users,
-    x,
 );
