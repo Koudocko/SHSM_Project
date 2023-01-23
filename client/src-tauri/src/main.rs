@@ -46,6 +46,7 @@ fn create_account(account: Account){
     stream.write_all(request.as_bytes()).unwrap();
 
     let response = package_stream(&mut stream);
+    stream.shutdown(std::net::Shutdown::Both);
 
     if &response[0] == "BAD"{
         const CREDENTIAL_LEN: usize = digest::SHA512_OUTPUT_LEN;

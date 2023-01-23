@@ -6,7 +6,7 @@ use netstruct::*;
 
 const SOCKET: &str = "192.168.2.5:7878";
 
-fn exists_in_database(entry: &Entry)-> bool{ true }
+fn exists_in_database(entry: &str)-> bool{ true }
 
 fn handle_connection(mut stream: TcpStream) {
     let buf_reader = BufReader::new(&mut stream);
@@ -20,9 +20,7 @@ fn handle_connection(mut stream: TcpStream) {
 
     let response = match request[0].as_str(){
         "EXISTS" =>{
-            let entry: Entry = serde_json::from_str(&request[1]).unwrap();
-            
-            if exists_in_database(&entry){
+            if exists_in_database(&request[1]){
                 "GOOD\n\n"
             }
             else{
