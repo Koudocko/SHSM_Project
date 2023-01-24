@@ -4,7 +4,6 @@
 )]
 
 use std::{
-    io::{prelude::*, BufReader},
     net::TcpStream,
     sync::Mutex,
 };
@@ -41,7 +40,14 @@ fn sync_elements(){
     }
 }
 
-fn insert_in_database(_: &str, _: &str){}
+fn login_account(username: String, password: String){
+    write_stream(&mut *STREAM.lock().unwrap(), 
+        Package { 
+            header: String::from("GET_ACCOUNT_KEYS"), 
+            payload: username.to_owned()
+        }
+    ).unwrap();
+}
 
 #[tauri::command]
 fn create_account(username: String, password: String){
@@ -94,27 +100,27 @@ fn create_account(username: String, password: String){
 
 #[tokio::main]
 async fn main(){
-    // create_account(String::from("Koudocko"), String::from("fajdsxD16612369E"));
+    create_account(String::from("Koudocko"), String::from("fajdsxD16612369E"));
 
-        write_stream(&mut *STREAM.lock().unwrap(), 
-            Package { 
-                header: String::from("CHECK_ACCOUNT\nbozo"), 
-                payload: String::from("bro") 
-            }
-        ).unwrap();
+    // write_stream(&mut *STREAM.lock().unwrap(), 
+    //     Package { 
+    //         header: String::from("CHECK_ACCOUNT\nbozo"), 
+    //         payload: String::from("bro") 
+    //     }
+    // ).unwrap();
 
-        let response = read_stream(&mut *STREAM.lock().unwrap());
-        println!("Response: {:?}", response);
+    // let response = read_stream(&mut *STREAM.lock().unwrap());
+    // println!("Response: {:?}", response);
 
-        write_stream(&mut *STREAM.lock().unwrap(), 
-            Package { 
-                header: String::from("CHECK_ACCOUNT\nbozo"), 
-                payload: String::from("bro") 
-            }
-        ).unwrap();
+    // write_stream(&mut *STREAM.lock().unwrap(), 
+    //     Package { 
+    //         header: String::from("CHECK_ACCOUNT\nbozo"), 
+    //         payload: String::from("bro") 
+    //     }
+    // ).unwrap();
 
-        let response = read_stream(&mut *STREAM.lock().unwrap());
-        println!("Response: {:?}", response);
+    // let response = read_stream(&mut *STREAM.lock().unwrap());
+    // println!("Response: {:?}", response);
 
 
     // tauri::Builder::default()

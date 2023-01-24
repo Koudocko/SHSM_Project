@@ -10,9 +10,11 @@ use netstruct::*;
 const SOCKET: &str = "127.0.0.1:7878";
 
 fn exists_in_database(_: &str)-> bool{ false }
+fn store_in_database(_: Account){}
 
 fn handle_connection(stream: &mut TcpStream) {
     let request = read_stream(stream);
+    println!("{request:?}");
 
     let response = match request.header.as_str(){
         "CHECK_ACCOUNT" =>{
@@ -24,7 +26,11 @@ fn handle_connection(stream: &mut TcpStream) {
             }
         }
         "CREATE_ACCOUNT" =>{
+            store_in_database(serde_json::from_str(&request.payload).unwrap());
             ""
+        }
+        "GET_ACCOUNT_KEYS" =>{
+           "" 
         }
         _ =>{
             ""
@@ -43,8 +49,10 @@ fn check_connections(streams: Arc<Mutex<Vec<TcpStream>>>){
     loop{
         for stream in &mut *streams.lock().unwrap(){
             let mut buf = [0u8];
-            if stream.peek(&mut buf).unwrap() != 0{
-                handle_connection(stream);
+            if let Ok(peeked) = stream.peek(&mut buf){
+                if peeked != 0{
+                    handle_connection(stream);
+                }
             }
         }
     }
