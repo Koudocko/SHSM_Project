@@ -7,8 +7,9 @@ use std::{
 #[derive(Serialize, Deserialize)]
 pub struct Account{
     pub username: String,
-    pub hash: [[u8; 32]; 2],
-    pub salt: [[u8; 32]; 2],
+    pub teacher: bool,
+    pub hash: Vec<u8>,
+    pub salt: Vec<u8>,
 }
 
 #[derive(Clone)]
