@@ -1,3 +1,3 @@
+DROP TABLE events;
+DROP TABLE announcements;
 DROP TABLE users;
-DROP TABLE test;
-DROP TABLE j;
