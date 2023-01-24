@@ -1,47 +1,76 @@
 use std::{
-    io::{prelude::*, BufReader},
     net::{TcpListener, TcpStream},
+    sync::{Mutex, Arc},
+    thread
 };
+
 use netstruct::*;
 
-const SOCKET: &str = "192.168.2.5:7878";
+// const SOCKET: &str = "192.168.2.5:7878";
+const SOCKET: &str = "127.0.0.1:7878";
 
-fn exists_in_database(entry: &str)-> bool{ true }
+fn exists_in_database(_: &str)-> bool{ false }
+fn store_in_database(_: Account){}
 
-fn handle_connection(mut stream: TcpStream) {
-    let buf_reader = BufReader::new(&mut stream);
-    let request: Vec<_> = buf_reader
-        .lines()
-        .map(|result| result.unwrap())
-        .take_while(|line| !line.is_empty())
-        .collect();
+fn handle_connection(stream: &mut TcpStream) {
+    let request = read_stream(stream);
+    println!("{request:?}");
 
-    println!("Request: {:#?}", request);
-
-    let response = match request[0].as_str(){
-        "EXISTS" =>{
-            if exists_in_database(&request[1]){
-                "GOOD\n\n"
+    let response = match request.header.as_str(){
+        "CHECK_ACCOUNT" =>{
+            if exists_in_database(&request.payload){
+                "EXISTS"
             }
             else{
-                "BAD\n\n"
+                "!EXISTS"
             }
+        }
+        "CREATE_ACCOUNT" =>{
+            store_in_database(serde_json::from_str(&request.payload).unwrap());
+            ""
+        }
+        "GET_ACCOUNT_KEYS" =>{
+           "" 
         }
         _ =>{
             ""
         }
-    };
+    }.to_owned();
 
-    stream.write_all(response.as_bytes()).unwrap();
+    write_stream(stream, 
+        Package{ 
+            header: String::from("GOOD"), 
+            payload: response
+        }
+    ).unwrap();
+}
+
+fn check_connections(streams: Arc<Mutex<Vec<TcpStream>>>){
+    loop{
+        for stream in &mut *streams.lock().unwrap(){
+            let mut buf = [0u8];
+            if let Ok(peeked) = stream.peek(&mut buf){
+                if peeked != 0{
+                    handle_connection(stream);
+                }
+            }
+        }
+    }
 }
 
 fn main() {
     let listener = TcpListener::bind(SOCKET).unwrap();
+    let streams = Arc::new(Mutex::new(Vec::new()));
 
-    for stream in listener.incoming() {
+    let handle = Arc::clone(&streams);
+    thread::spawn(||{
+        check_connections(handle);
+    });
+
+    for stream in listener.incoming(){
         if let Ok(stream) = stream{
             println!("Connection established!");
-            handle_connection(stream);
+            streams.lock().unwrap().push(stream);
         }
         else{
             println!("Failed to establish connection!");
