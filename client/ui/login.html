@@ -53,11 +53,17 @@
                     <button href="#" onclick="document.getElementById('sign-in').scrollIntoView({behavior: 'smooth', block: 'center', inline: 'center'});">Login</button>
                 </div>
                 <div class="shsm-selection">
-                    <ul>
-                        <li class="img1"> <img src="images/Certifications.png" alt="Certificate 1" class="certificate"></li>
-                        <li> <img src="images/logo.png" alt="Certificate 2" class="certificate"></li>
-                        <li> <img src="images/logo.png" alt="Certificate 3" class="certificate"></li>
-                    </ul>
+                    <label for ="shsm-selection">Choose your SHSM sector: </label>
+                    <select name="shsm-selection">
+                        <optgroup label="ICT Engineering">
+                            <option value="abc">abc</option>
+                            <option value="abc">abc</option>
+                        </optgroup>
+                        <optgroup label="Media">
+                            <option value="abc">abc</option>
+                            <option value="abc">abc</option>
+                        </optgroup>
+                    </select>
                 </div>
                 <a href="login.html" onClick="">
                     <input type="submit" value="Create Account">
