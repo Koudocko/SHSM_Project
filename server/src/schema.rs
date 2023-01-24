@@ -1,27 +1,39 @@
 // @generated automatically by Diesel CLI.
 
 diesel::table! {
-    j (id) {
-        id -> Numeric,
+    announcements (id) {
+        id -> Int4,
+        title -> Text,
+        description -> Text,
     }
 }
 
 diesel::table! {
-    test (id) {
-        id -> Numeric,
+    events (id) {
+        id -> Int4,
+        title -> Text,
+        description -> Text,
+        date -> Text,
+        certification -> Bool,
+        completed -> Bool,
+        user_id -> Nullable<Int4>,
     }
 }
 
 diesel::table! {
     users (id) {
-        id -> Numeric,
-        username -> Varchar,
-        password -> Varchar,
+        id -> Int4,
+        username -> Text,
+        teacher -> Bool,
+        hash -> Bytea,
+        salt -> Bytea,
     }
 }
 
+diesel::joinable!(events -> users (user_id));
+
 diesel::allow_tables_to_appear_in_same_query!(
-    j,
-    test,
+    announcements,
+    events,
     users,
 );
