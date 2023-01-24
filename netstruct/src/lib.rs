@@ -1,5 +1,4 @@
 use serde::{Serialize, Deserialize};
-use serde_json::to_vec;
 use std::{
     io::{prelude::*, BufReader},
     net::TcpStream
@@ -28,19 +27,19 @@ pub struct Package{
 }
 
 pub fn write_stream(stream: &mut TcpStream, package: Package)-> Result<(), std::io::Error>{
-    let buf = &mut serde_json::to_vec(&package)?;
-    buf.push('\n' as u8);
-    stream.write_all(buf)?;
+    let mut buf: Vec<u8> = serde_json::to_vec(&package)?;
+    buf.push(b'\n');
+    stream.write_all(&mut buf)?;
 
     Ok(())
 }
 
 pub fn read_stream(stream: &mut TcpStream)-> Package{
-    let buffer: String = BufReader::new(stream)
-        .lines()
-        .map(|result| result.unwrap())
-        .take_while(|line| !line.is_empty())
-        .collect();
+    let mut buf = String::new();
 
-    serde_json::from_str(&buffer).unwrap()
+    BufReader::new(stream)
+        .read_line(&mut buf)
+        .unwrap();
+
+    serde_json::from_str(&buf).unwrap()
 }
