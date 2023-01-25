@@ -95,7 +95,7 @@ fn create_account(username: String, password: String, is_teacher: bool){
 
 #[tokio::main]
 async fn main(){
-    create_account(String::from("Koudocko"), String::from("fajdsxD16612369E"), true);
+    // create_account(String::from("Koudocko"), String::from("fajdsxD16612369E"), true);
 
     // write_stream(&mut *STREAM.lock().unwrap(), 
     //     Package { 
