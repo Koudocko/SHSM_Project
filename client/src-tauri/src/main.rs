@@ -50,7 +50,7 @@ fn login_account(username: String, password: String){
 }
 
 #[tauri::command]
-fn create_account(username: String, password: String){
+fn create_account(username: String, password: String, is_teacher: bool){
     write_stream(&mut *STREAM.lock().unwrap(), 
         Package { 
             header: String::from("CHECK_ACCOUNT"), 
@@ -77,17 +77,12 @@ fn create_account(username: String, password: String){
             &mut pbkdf2_hash,
         );
         
-        let mut hash = [[0_u8; 32]; 2];
-        for i in 0..64{
-            hash[i / 32][i % 32] = pbkdf2_hash[i];
-        }
-
-        let mut salt = [[0_u8; 32]; 2];
-        for i in 0..64{
-            salt[i / 32][i % 32] = salt_key[i];
-        }
-
-        let account = Account{ username: username.to_owned(), hash, salt, };
+        let account = Account{ 
+            username: username.to_owned(), 
+            teacher: is_teacher,
+            hash: pbkdf2_hash.to_vec(), 
+            salt: salt_key.to_vec() 
+        };
 
         write_stream(&mut *STREAM.lock().unwrap(), 
             Package { 
@@ -100,7 +95,7 @@ fn create_account(username: String, password: String){
 
 #[tokio::main]
 async fn main(){
-    create_account(String::from("Koudocko"), String::from("fajdsxD16612369E"));
+    // create_account(String::from("Koudocko"), String::from("fajdsxD16612369E"), true);
 
     // write_stream(&mut *STREAM.lock().unwrap(), 
     //     Package { 

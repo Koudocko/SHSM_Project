@@ -1,7 +1,8 @@
-
 body {
     font-family: Arial, sans-serif;
     background-color: #ccb4dc;
+    background-image: url('images/webb.png');
+    background-size: fill;
 }
 
 h1 {
