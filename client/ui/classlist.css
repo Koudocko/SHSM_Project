@@ -116,6 +116,30 @@
   .toggle-password-btn:hover {
     color: #6B3E72;
   }
+  
+.nav-item:hover {
+    color: purple;
+    transition: color .3x ease-in-out, box-shadow .3s ease-in-out;
+}
+
+.navbar.scrolled {
+    background: #8F4B96;
+    transition: background 500ms
+}
+.font-weight-light {
+    font-family: 'Source Serif Pro', serif
+}
+
+.navbar-brand {
+    transition: transform 0.2s, box-shadow 0.2s;
+}
+
+.navbar-brand:hover {
+    transform: scale(1.2);
+    transition: transform 0.2s, box-shadow 0.2s;
+}
+
+
 
     
     
