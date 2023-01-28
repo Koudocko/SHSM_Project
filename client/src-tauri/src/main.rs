@@ -8,10 +8,12 @@ use std::{
     sync::Mutex,
 };
 use netstruct::*;
+use netstruct::models::NewUser;
 use ring::rand::SecureRandom;
 use ring::{digest, pbkdf2, rand};
 use std::num::NonZeroU32;
 use once_cell::sync::Lazy;
+use tauri::api::dialog::MessageDialogBuilder;
 
 static mut CURRENT_PAGE: Page = Page::Login;
 // const SOCKET: &str = "als-kou.ddns.net:7878";
@@ -40,6 +42,7 @@ fn sync_elements(){
     }
 }
 
+#[tauri::command]
 fn login_account(username: String, password: String){
     write_stream(&mut *STREAM.lock().unwrap(), 
         Package { 
@@ -59,8 +62,8 @@ fn create_account(username: String, password: String, is_teacher: bool){
     ).unwrap();
 
     let response = read_stream(&mut *STREAM.lock().unwrap());
-
-    if response.payload == "!EXISTS"{
+    if response.header == "GOOD"{
+        println!("good1");
         const CREDENTIAL_LEN: usize = digest::SHA512_OUTPUT_LEN;
         let n_iter = NonZeroU32::new(100_000).unwrap();
         let rng = rand::SystemRandom::new();
@@ -77,11 +80,12 @@ fn create_account(username: String, password: String, is_teacher: bool){
             &mut pbkdf2_hash,
         );
         
-        let account = Account{ 
+        let account = NewUser{ 
             username: username.to_owned(), 
             teacher: is_teacher,
             hash: pbkdf2_hash.to_vec(), 
-            salt: salt_key.to_vec() 
+            salt: salt_key.to_vec(),
+            code: None,
         };
 
         write_stream(&mut *STREAM.lock().unwrap(), 
@@ -90,6 +94,16 @@ fn create_account(username: String, password: String, is_teacher: bool){
                 payload: serde_json::to_string(&account).unwrap()
             }
         ).unwrap();
+
+        let response = read_stream(&mut *STREAM.lock().unwrap());
+        if response.header == "BAD"{
+           println!("bad2");
+        }
+    }
+    else{
+        println!("bad1");
+        MessageDialogBuilder::new("Username", response.payload)
+           .show(|_|{});
     }
 }
 
@@ -117,8 +131,8 @@ async fn main(){
     // let response = read_stream(&mut *STREAM.lock().unwrap());
     // println!("Response: {:?}", response);
 
-
     tauri::Builder::default()
+        .invoke_handler(tauri::generate_handler![create_account, login_account])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");
 }

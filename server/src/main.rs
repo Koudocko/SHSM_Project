@@ -3,42 +3,38 @@ use std::{
     sync::{Mutex, Arc},
     thread
 };
-
 use netstruct::*;
-use schema::users::dsl::*;
-use diesel::prelude::*;
-use models::*;
-use db_tools::*;
-
-mod models;
-mod schema;
-mod db_tools;
+use netstruct::models::NewUser;
 
 // const SOCKET: &str = "192.168.2.5:7878";
 const SOCKET: &str = "127.0.0.1:7878";
-
-fn exists_in_database(_: &str)-> bool{ false }
-fn store_in_database(_: Account){}
 
 fn handle_connection(stream: &mut TcpStream) {
     let request = read_stream(stream);
     println!("{request:?}");
 
-    let response = match request.header.as_str(){
+    let mut header = String::from("GOOD");
+    let payload = match request.header.as_str(){
         "CHECK_ACCOUNT" =>{
             if exists_in_database(&request.payload){
-                "EXISTS"
+                header = String::from("BAD");
+                "Username already exists! Please change to continue..."
             }
             else{
-                "!EXISTS"
+                ""
             }
         }
         "CREATE_ACCOUNT" =>{
-            store_in_database(serde_json::from_str(&request.payload).unwrap());
-            ""
+            if store_in_database(serde_json::from_str::<NewUser>(&request.payload).unwrap()).is_err(){
+               header = String::from("BAD");
+               "Failed to signup! Please try again..."
+            }
+            else{
+                ""
+            }
         }
         "GET_ACCOUNT_KEYS" =>{
-           "" 
+            "" 
         }
         _ =>{
             ""
@@ -47,8 +43,8 @@ fn handle_connection(stream: &mut TcpStream) {
 
     write_stream(stream, 
         Package{ 
-            header: String::from("GOOD"), 
-            payload: response
+            header,
+            payload, 
         }
     ).unwrap();
 }
@@ -67,54 +63,21 @@ fn check_connections(streams: Arc<Mutex<Vec<TcpStream>>>){
 }
 
 fn main() {
-    // let listener = TcpListener::bind(SOCKET).unwrap();
-    // let streams = Arc::new(Mutex::new(Vec::new()));
+    let listener = TcpListener::bind(SOCKET).unwrap();
+    let streams = Arc::new(Mutex::new(Vec::new()));
 
-    // let handle = Arc::clone(&streams);
-    // thread::spawn(||{
-    //     check_connections(handle);
-    // });
+    let handle = Arc::clone(&streams);
+    thread::spawn(||{
+        check_connections(handle);
+    });
 
-    // for stream in listener.incoming(){
-    //     if let Ok(stream) = stream{
-    //         println!("Connection established!");
-    //         streams.lock().unwrap().push(stream);
-    //     }
-    //     else{
-    //         println!("Failed to establish connection!");
-    //     }
-    // }
-    
-    let connection = &mut establish_connection();
-    let new_user = NewUser{ 
-        username: String::from("joe"),
-        hash: Vec::new(),
-        salt: Vec::new(),
-        teacher: true,
-        code: None
-    };
-
-    // diesel::insert_into(schema::users::table)
-    //     .values(&new_user)
-    //     .execute(connection)
-    //     .expect("Failed to insert user!");
-
-    // diesel::update(users.find(1))
-    //     .set(username.eq("JOE BIDEN"))
-    //     .execute(connection)
-    //     .expect("Failed to update user!");
-
-    
-
-    // let results = users
-    //     .load::<User>(connection)
-    //     .expect("Error loading posts");
-
-
-    println!("Displaying {} users", results.len());
-    for user in results {
-        println!("{:?}", user.id);
-        println!("{:?}", user.username);
-        println!("---------------------");
+    for stream in listener.incoming(){
+        if let Ok(stream) = stream{
+            println!("Connection established!");
+            streams.lock().unwrap().push(stream);
+        }
+        else{
+            println!("Failed to establish connection!");
+        }
     }
 }

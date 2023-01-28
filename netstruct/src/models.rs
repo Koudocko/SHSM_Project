@@ -1,3 +1,4 @@
+use serde::{Serialize, Deserialize};
 use diesel::prelude::*;
 use crate::schema::*;
 
@@ -13,6 +14,7 @@ pub struct User{
 
 #[derive(Insertable)]
 #[diesel(table_name = users)]
+#[derive(Serialize, Deserialize)]
 pub struct NewUser {
     pub username: String,
     pub hash: Vec<u8>,
@@ -22,14 +24,13 @@ pub struct NewUser {
 }
 
 #[derive(Identifiable, Queryable, Associations)]
-#[belongs_to(User, foreign_key = "user_id")]
+#[diesel(belongs_to(User))]
 pub struct Announcement{
     pub id: i32,
     pub title: String,
     pub description: String,
     pub user_id: i32,
 }
-
 
 #[derive(Insertable)]
 #[diesel(table_name = announcements)]
@@ -40,7 +41,7 @@ pub struct NewAnnouncement {
 }
 
 #[derive(Identifiable, Queryable, Associations)]
-#[belongs_to(User, foreign_key = "user_id")]
+#[diesel(belongs_to(User))]
 pub struct Event{
     pub id: i32,
     pub title: String,

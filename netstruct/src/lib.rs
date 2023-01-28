@@ -3,14 +3,16 @@ use std::{
     io::{prelude::*, BufReader},
     net::TcpStream
 };
+use schema::users::dsl::*;
+use diesel::{
+    pg::PgConnection,
+    prelude::*,
+    result::Error
+};
+use models::*;
 
-#[derive(Serialize, Deserialize)]
-pub struct Account{
-    pub username: String,
-    pub teacher: bool,
-    pub hash: Vec<u8>,
-    pub salt: Vec<u8>,
-}
+pub mod schema;
+pub mod models;
 
 #[derive(Clone)]
 pub enum Page{
@@ -43,4 +45,25 @@ pub fn read_stream(stream: &mut TcpStream)-> Package{
         .unwrap();
 
     serde_json::from_str(&buf).unwrap()
+}
+
+pub fn establish_connection() -> PgConnection {
+    let database_url = "postgres://postgres@localhost/SHSM_Project";
+
+    PgConnection::establish(&database_url)
+        .expect(&format!("Error connecting to {}", database_url))
+}
+
+pub fn exists_in_database(pattern: &str)-> bool{
+    let connection = &mut establish_connection();
+
+    users.filter(username.eq(pattern)).first::<User>(connection).is_ok()
+}
+
+pub fn store_in_database(new_user: NewUser)-> Result<usize, Error>{
+    let connection = &mut establish_connection();
+
+    diesel::insert_into(schema::users::table)
+        .values(&new_user)
+        .execute(connection)
 }
