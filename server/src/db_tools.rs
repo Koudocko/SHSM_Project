@@ -1,9 +1,6 @@
 use diesel::pg::PgConnection;
 use diesel::prelude::*;
 
-pub mod models;
-pub mod schema;
-
 pub fn establish_connection() -> PgConnection {
     let database_url = "postgres://postgres@localhost/SHSM_Project";
 

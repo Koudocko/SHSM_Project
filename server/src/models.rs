@@ -1,31 +1,63 @@
 use diesel::prelude::*;
-use diesel::sql_types::*;
+use crate::schema::*;
 
-#[derive(Queryable)]
+#[derive(Identifiable, Queryable)]
 pub struct User{
-    pub id: Serial,
-    pub username: Text,
-    pub hash: Bytea,
-    pub salt: Bytea,
-    pub teacher: Bool,
-    pub code: Option<Text>,
+    pub id: i32,
+    pub username: String,
+    pub hash: Vec<u8>,
+    pub salt: Vec<u8>,
+    pub teacher: bool,
+    pub code: Option<String>,
 }
 
-#[derive(Queryable)]
+#[derive(Insertable)]
+#[diesel(table_name = users)]
+pub struct NewUser {
+    pub username: String,
+    pub hash: Vec<u8>,
+    pub salt: Vec<u8>,
+    pub teacher: bool,
+    pub code: Option<String>,
+}
+
+#[derive(Identifiable, Queryable, Associations)]
+#[belongs_to(User, foreign_key = "user_id")]
 pub struct Announcement{
-    pub id: Serial,
-    pub title: Text,
-    pub description: Text,
-    pub user_id: Integer,
+    pub id: i32,
+    pub title: String,
+    pub description: String,
+    pub user_id: i32,
 }
 
-#[derive(Queryable)]
+
+#[derive(Insertable)]
+#[diesel(table_name = announcements)]
+pub struct NewAnnouncement {
+    pub title: String,
+    pub description: String,
+    pub user_id: i32,
+}
+
+#[derive(Identifiable, Queryable, Associations)]
+#[belongs_to(User, foreign_key = "user_id")]
 pub struct Event{
-    pub id: Serial,
-    pub title: Text,
-    pub description: Text,
-    pub date: Text,
-    pub certification: Bool,
-    pub completed: Bool,
-    pub user_id: Integer,
+    pub id: i32,
+    pub title: String,
+    pub description: String,
+    pub date: String,
+    pub certification: bool,
+    pub completed: bool,
+    pub user_id: i32,
+}
+
+#[derive(Insertable)]
+#[diesel(table_name = events)]
+pub struct NewEvent {
+    pub title: String,
+    pub description: String,
+    pub date: String,
+    pub certification: bool,
+    pub completed: bool,
+    pub user_id: i32,
 }
