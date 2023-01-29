@@ -4,7 +4,7 @@ CREATE TABLE users (
   hash BYTEA NOT NULL,
   salt BYTEA NOT NULL,
   teacher BOOLEAN NOT NULL DEFAULT FALSE,
-  code TEXT DEFAULT NULL
+  code TEXT NOT NULL
 );
 
 CREATE TABLE announcements (

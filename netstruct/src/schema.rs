@@ -28,7 +28,7 @@ diesel::table! {
         hash -> Bytea,
         salt -> Bytea,
         teacher -> Bool,
-        code -> Nullable<Text>,
+        code -> Text,
     }
 }
 

@@ -13,7 +13,12 @@ use ring::rand::SecureRandom;
 use ring::{digest, pbkdf2, rand};
 use std::num::NonZeroU32;
 use once_cell::sync::Lazy;
-use tauri::api::dialog::MessageDialogBuilder;
+use tauri::{
+    api::dialog::MessageDialogBuilder,
+    State,
+    Window,
+    Manager
+};
 
 static mut CURRENT_PAGE: Page = Page::Login;
 // const SOCKET: &str = "als-kou.ddns.net:7878";
@@ -21,6 +26,8 @@ const SOCKET: &str = "127.0.0.1:7878";
 static STREAM: Lazy<Mutex<TcpStream>> = Lazy::new(||{
     Mutex::new(TcpStream::connect("127.0.0.1:7878").unwrap())
 });
+
+struct WindowHandle(Mutex<Window>);
 
 fn sync_elements(){
     match unsafe{CURRENT_PAGE.clone()}{
@@ -53,7 +60,7 @@ fn login_account(username: String, password: String){
 }
 
 #[tauri::command]
-fn create_account(username: String, password: String, is_teacher: bool){
+fn create_account(username: String, password: String, course_code: String, is_teacher: bool, window: State<WindowHandle>){
     write_stream(&mut *STREAM.lock().unwrap(), 
         Package { 
             header: String::from("CHECK_ACCOUNT"), 
@@ -63,7 +70,6 @@ fn create_account(username: String, password: String, is_teacher: bool){
 
     let response = read_stream(&mut *STREAM.lock().unwrap());
     if response.header == "GOOD"{
-        println!("good1");
         const CREDENTIAL_LEN: usize = digest::SHA512_OUTPUT_LEN;
         let n_iter = NonZeroU32::new(100_000).unwrap();
         let rng = rand::SystemRandom::new();
@@ -85,7 +91,7 @@ fn create_account(username: String, password: String, is_teacher: bool){
             teacher: is_teacher,
             hash: pbkdf2_hash.to_vec(), 
             salt: salt_key.to_vec(),
-            code: None,
+            code: course_code,
         };
 
         write_stream(&mut *STREAM.lock().unwrap(), 
@@ -96,42 +102,27 @@ fn create_account(username: String, password: String, is_teacher: bool){
         ).unwrap();
 
         let response = read_stream(&mut *STREAM.lock().unwrap());
-        if response.header == "BAD"{
-           println!("bad2");
+        if response.header == "GOOD"{
+            window.0.lock().unwrap().eval("document.getElementById('sign-in').scrollIntoView({behavior: 'smooth', block: 'center', inline: 'center'});");
+        }
+        else{
+            MessageDialogBuilder::new("ERROR ENCOUNTERED", response.payload)
+               .show(|_|{});
         }
     }
     else{
-        println!("bad1");
-        MessageDialogBuilder::new("Username", response.payload)
+        MessageDialogBuilder::new("ERROR ENCOUNTERED", response.payload)
            .show(|_|{});
     }
 }
 
 #[tokio::main]
 async fn main(){
-    // create_account(String::from("Koudocko"), String::from("fajdsxD16612369E"), true);
-
-    // write_stream(&mut *STREAM.lock().unwrap(), 
-    //     Package { 
-    //         header: String::from("CHECK_ACCOUNT\nbozo"), 
-    //         payload: String::from("bro") 
-    //     }
-    // ).unwrap();
-
-    // let response = read_stream(&mut *STREAM.lock().unwrap());
-    // println!("Response: {:?}", response);
-
-    // write_stream(&mut *STREAM.lock().unwrap(), 
-    //     Package { 
-    //         header: String::from("CHECK_ACCOUNT\nbozo"), 
-    //         payload: String::from("bro") 
-    //     }
-    // ).unwrap();
-
-    // let response = read_stream(&mut *STREAM.lock().unwrap());
-    // println!("Response: {:?}", response);
-
     tauri::Builder::default()
+        .setup(|app|{
+            app.manage(WindowHandle(Mutex::new(app.get_window("main").unwrap())));
+            Ok(())
+        })
         .invoke_handler(tauri::generate_handler![create_account, login_account])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");

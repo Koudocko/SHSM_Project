@@ -9,7 +9,7 @@ pub struct User{
     pub hash: Vec<u8>,
     pub salt: Vec<u8>,
     pub teacher: bool,
-    pub code: Option<String>,
+    pub code: String,
 }
 
 #[derive(Insertable)]
@@ -20,7 +20,7 @@ pub struct NewUser {
     pub hash: Vec<u8>,
     pub salt: Vec<u8>,
     pub teacher: bool,
-    pub code: Option<String>,
+    pub code: String,
 }
 
 #[derive(Identifiable, Queryable, Associations)]
