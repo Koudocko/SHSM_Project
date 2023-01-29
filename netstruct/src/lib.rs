@@ -1,15 +1,16 @@
 use serde::{Serialize, Deserialize};
 use std::{
     io::{prelude::*, BufReader},
-    net::TcpStream
+    net::TcpStream, error::Error
 };
 use schema::users::dsl::*;
 use diesel::{
     pg::PgConnection,
     prelude::*,
-    result::Error
 };
 use models::*;
+use serde_json::{json, Value};
+use std::fmt;
 
 pub mod schema;
 pub mod models;
@@ -28,6 +29,18 @@ pub struct Package{
     pub header: String,
     pub payload: String
 }
+
+#[derive(Debug, Clone)]
+struct PlainError;
+impl PlainError{
+    fn new()-> PlainError{ PlainError }
+}
+impl fmt::Display for PlainError{
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        write!(f, "")
+    }
+}
+impl Error for PlainError{}
 
 pub fn write_stream(stream: &mut TcpStream, package: Package)-> Result<(), std::io::Error>{
     let mut buf: Vec<u8> = serde_json::to_vec(&package)?;
@@ -54,16 +67,38 @@ pub fn establish_connection() -> PgConnection {
         .expect(&format!("Error connecting to {}", database_url))
 }
 
-pub fn exists_in_database(pattern: &str)-> bool{
+pub fn exists_in_database(pattern: Value)-> Result<bool, Box<dyn Error>>{
     let connection = &mut establish_connection();
 
-    users.filter(username.eq(pattern)).first::<User>(connection).is_ok()
+    let pattern = pattern["username"].as_str();
+    if pattern.is_none(){
+       Err(Box::new(PlainError::new())) 
+    }
+    else{
+        Ok(users.filter(username.eq(pattern.unwrap())).first::<User>(connection).is_ok())
+    }
 }
 
-pub fn store_in_database(new_user: NewUser)-> Result<usize, Error>{
+pub fn store_in_database(new_user: NewUser)-> Result<usize, Box<dyn Error>>{
     let connection = &mut establish_connection();
 
-    diesel::insert_into(schema::users::table)
+    Ok(diesel::insert_into(schema::users::table)
         .values(&new_user)
-        .execute(connection)
+        .execute(connection)?)
+}
+
+pub fn get_account_keys(pattern: Value)-> Result<Option<String>, Box<dyn Error>>{
+    let connection = &mut establish_connection();
+
+    if let Some(pattern) = pattern["username"].as_str(){
+        if let Ok(user) = users.filter(username.eq(pattern)).first::<User>(connection){
+            Ok(Some(json!({ "hash": user.hash, "salt": user.salt }).to_string()))
+        }
+        else{
+            Ok(None)
+        }
+    }
+    else{
+       Err(Box::new(PlainError::new()))
+    }
 }

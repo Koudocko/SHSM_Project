@@ -19,6 +19,7 @@ use tauri::{
     Window,
     Manager
 };
+use serde_json::{json, Value};
 
 static mut CURRENT_PAGE: Page = Page::Login;
 // const SOCKET: &str = "als-kou.ddns.net:7878";
@@ -57,6 +58,15 @@ fn login_account(username: String, password: String){
             payload: username.to_owned()
         }
     ).unwrap();
+
+    let response = read_stream(&mut *STREAM.lock().unwrap());
+    if response.header == "GOOD"{
+
+    }
+    else{
+        MessageDialogBuilder::new("ERROR ENCOUNTERED", serde_json::from_str::<Value>(&response.payload).unwrap()["error"].as_str().unwrap())
+           .show(|_|{});
+    }
 }
 
 #[tauri::command]
@@ -64,7 +74,7 @@ fn create_account(username: String, password: String, course_code: String, is_te
     write_stream(&mut *STREAM.lock().unwrap(), 
         Package { 
             header: String::from("CHECK_ACCOUNT"), 
-            payload: username.to_owned()
+            payload: json!({ "username": username }).to_string()
         }
     ).unwrap();
 
@@ -103,15 +113,17 @@ fn create_account(username: String, password: String, course_code: String, is_te
 
         let response = read_stream(&mut *STREAM.lock().unwrap());
         if response.header == "GOOD"{
-            window.0.lock().unwrap().eval("document.getElementById('sign-in').scrollIntoView({behavior: 'smooth', block: 'center', inline: 'center'});");
+            window.0.lock().unwrap()
+                .eval("document.getElementById('sign-in').scrollIntoView({behavior: 'smooth', block: 'center', inline: 'center'});")
+                .unwrap();
         }
         else{
-            MessageDialogBuilder::new("ERROR ENCOUNTERED", response.payload)
+            MessageDialogBuilder::new("ERROR ENCOUNTERED", serde_json::from_str::<Value>(&response.payload).unwrap()["error"].as_str().unwrap())
                .show(|_|{});
         }
     }
     else{
-        MessageDialogBuilder::new("ERROR ENCOUNTERED", response.payload)
+        MessageDialogBuilder::new("ERROR ENCOUNTERED", serde_json::from_str::<Value>(&response.payload).unwrap()["error"].as_str().unwrap())
            .show(|_|{});
     }
 }
