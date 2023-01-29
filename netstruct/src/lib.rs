@@ -42,6 +42,10 @@ impl fmt::Display for PlainError{
 }
 impl Error for PlainError{}
 
+pub fn unpack(payload: &str, field: &str)-> Value{
+    serde_json::from_str::<Value>(payload).unwrap()[field].clone()
+}
+
 pub fn write_stream(stream: &mut TcpStream, package: Package)-> Result<(), std::io::Error>{
     let mut buf: Vec<u8> = serde_json::to_vec(&package)?;
     buf.push(b'\n');
@@ -92,7 +96,7 @@ pub fn get_account_keys(pattern: Value)-> Result<Option<String>, Box<dyn Error>>
 
     if let Some(pattern) = pattern["username"].as_str(){
         if let Ok(user) = users.filter(username.eq(pattern)).first::<User>(connection){
-            Ok(Some(json!({ "hash": user.hash, "salt": user.salt }).to_string()))
+            Ok(Some(json!({ "salt": user.salt }).to_string()))
         }
         else{
             Ok(None)
@@ -101,4 +105,35 @@ pub fn get_account_keys(pattern: Value)-> Result<Option<String>, Box<dyn Error>>
     else{
        Err(Box::new(PlainError::new()))
     }
+}
+
+pub fn validate_key(pattern: Value)-> Result<bool, Box<dyn Error>>{
+    let connection = &mut establish_connection();
+
+    if let Some(user_hash) = pattern["hash"].as_array(){
+        let user_hash = user_hash.into_iter().map(|byte|{
+            if let Some(byte) = byte.as_u64(){
+                if let Ok(byte) = u8::try_from(byte){
+                    return byte
+                }
+            }
+
+            0
+        }).collect::<Vec<u8>>();
+
+        if let Some(user_username) = pattern["username"].as_str(){
+            let user = users.filter(username.eq(user_username)).first::<User>(connection)?;
+
+            let mut idx = 0;
+            let verified = !user_hash.iter().any(|byte|{
+                let check = *byte != user.hash[idx];
+                idx += 1;
+                check
+            });
+
+            return Ok(verified);
+        }
+    }
+
+   Err(Box::new(PlainError::new()))
 }

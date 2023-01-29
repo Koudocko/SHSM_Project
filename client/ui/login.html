@@ -12,19 +12,19 @@
             <div class="form"> 
                 <h2>Login</h2>
                 <div class="inputForm">
-                    <input type="text" required="required"></input>    
+                    <input id="login_username_input" type="text" required="required"></input>    
                     <span>Username</span>
                     <i></i>
                 </div>
                 <div class="inputForm">
-                    <input type="password" required="required"></input>    
+                    <input id="login_password_input" type="password" required="required"></input>    
                     <span>Password</span>
                     <i></i>
                 </div>
                 <div class="links">
                     <button href="#" class="SignupBtnLink" onclick="document.getElementById('sign-up').scrollIntoView({behavior: 'smooth', block: 'center', inline: 'center'});">Sign Up</button>
                 </div>
-                <a href="home.html">
+                <a onClick="login_account()">
                     <input type="submit" value="Login">
                 </a>
             </div>
@@ -35,12 +35,12 @@
             <div class="form"> 
                 <h2>Sign Up</h2>
                 <div class="inputForm">
-                    <input id="username_input" type="text" required="required"></input>    
+                    <input id="signup_username_input" type="text" required="required"></input>    
                     <span>Username</span>
                     <i></i>
                 </div>
                 <div class="inputForm">
-                    <input id="password_input" type="password" required="required"></input>    
+                    <input id="signup_password_input" type="password" required="required"></input>    
                     <span>Password</span>
                     <i></i>
                 </div>

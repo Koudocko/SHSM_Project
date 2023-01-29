@@ -1,8 +1,8 @@
 function create_account(){
     const { invoke } = window.__TAURI__.tauri 
 
-    let _username = document.getElementById("username_input").value;
-    let _password = document.getElementById("password_input").value;
+    let _username = document.getElementById("signup_username_input").value;
+    let _password = document.getElementById("signup_password_input").value;
     let _courseCode = document.getElementById("course_code_input").value;
 
     if (document.getElementById("role_select").selectedIndex == 0){
@@ -13,5 +13,15 @@ function create_account(){
     }
 
     invoke('create_account', { username: _username, password: _password, courseCode: _courseCode, isTeacher: _isTeacher })
+			.then(() =>{});
+}
+
+function login_account(){
+    const { invoke } = window.__TAURI__.tauri 
+
+    let _username = document.getElementById("login_username_input").value;
+    let _password = document.getElementById("login_password_input").value;
+
+    invoke('login_account', { username: _username, password: _password })
 			.then(() =>{});
 }

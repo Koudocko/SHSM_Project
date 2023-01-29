@@ -43,6 +43,15 @@ fn handle_connection(stream: &mut TcpStream)-> Result<(), Box<dyn Error>> {
                 json!({ "error": "User does not exist! Please enter a valid username..." }).to_string()
             }
         }
+        "VALIDATE_KEY" =>{
+            if !validate_key(serde_json::from_str::<Value>(&request.payload)?)?{
+                header = String::from("BAD");
+                json!({ "error": "Password is invalid! Please re-enter your password..." }).to_string()
+            }
+            else{
+               String::new() 
+            }
+        }
         _ =>{
             String::new()
         }

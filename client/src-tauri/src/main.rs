@@ -51,20 +51,56 @@ fn sync_elements(){
 }
 
 #[tauri::command]
-fn login_account(username: String, password: String){
+fn login_account(username: String, password: String, window: State<WindowHandle>){
     write_stream(&mut *STREAM.lock().unwrap(), 
         Package { 
             header: String::from("GET_ACCOUNT_KEYS"), 
-            payload: username.to_owned()
+            payload: json!({ "username": username }).to_string()
         }
     ).unwrap();
 
     let response = read_stream(&mut *STREAM.lock().unwrap());
     if response.header == "GOOD"{
+        const CREDENTIAL_LEN: usize = digest::SHA512_OUTPUT_LEN;
+        let n_iter = NonZeroU32::new(100_000).unwrap();
+        
+        let mut pbkdf2_hash = [0u8; CREDENTIAL_LEN];
+        let salt_key = unpack(&response.payload, "salt")
+            .as_array()
+            .unwrap()
+            .into_iter()
+            .map(|byte| u8::try_from(byte.as_u64().unwrap()).unwrap())
+            .collect::<Vec<u8>>();
 
+        pbkdf2::derive(
+            pbkdf2::PBKDF2_HMAC_SHA512,
+            n_iter,
+            &salt_key,
+            password.as_bytes(),
+            &mut pbkdf2_hash,
+        );
+
+        write_stream(&mut *STREAM.lock().unwrap(), 
+            Package { 
+                header: String::from("VALIDATE_KEY"), 
+                payload: json!({ "username": username, "hash": pbkdf2_hash.to_vec() }).to_string()
+            }
+        ).unwrap();
+
+        let response = read_stream(&mut *STREAM.lock().unwrap());
+        if response.header == "GOOD"{
+            window.0.lock().unwrap()
+                .eval("window.location.replace('home.html');")
+                .unwrap();
+        }
+        else{
+            MessageDialogBuilder::new("ERROR ENCOUNTERED", unpack(&response.payload, "error").as_str().unwrap())
+               .show(|_|{});
+        }
+        
     }
     else{
-        MessageDialogBuilder::new("ERROR ENCOUNTERED", serde_json::from_str::<Value>(&response.payload).unwrap()["error"].as_str().unwrap())
+        MessageDialogBuilder::new("ERROR ENCOUNTERED", unpack(&response.payload, "error").as_str().unwrap())
            .show(|_|{});
     }
 }
@@ -118,12 +154,12 @@ fn create_account(username: String, password: String, course_code: String, is_te
                 .unwrap();
         }
         else{
-            MessageDialogBuilder::new("ERROR ENCOUNTERED", serde_json::from_str::<Value>(&response.payload).unwrap()["error"].as_str().unwrap())
+            MessageDialogBuilder::new("ERROR ENCOUNTERED", unpack(&response.payload, "error").as_str().unwrap())
                .show(|_|{});
         }
     }
     else{
-        MessageDialogBuilder::new("ERROR ENCOUNTERED", serde_json::from_str::<Value>(&response.payload).unwrap()["error"].as_str().unwrap())
+        MessageDialogBuilder::new("ERROR ENCOUNTERED", unpack(&response.payload, "error").as_str().unwrap())
            .show(|_|{});
     }
 }
