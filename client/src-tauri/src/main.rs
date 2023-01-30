@@ -3,6 +3,7 @@
   windows_subsystem = "windows"
 )]
 
+use std::borrow::BorrowMut;
 use std::{
     net::TcpStream,
     sync::Mutex,
@@ -27,6 +28,7 @@ const SOCKET: &str = "127.0.0.1:7878";
 static STREAM: Lazy<Mutex<TcpStream>> = Lazy::new(||{
     Mutex::new(TcpStream::connect("127.0.0.1:7878").unwrap())
 });
+static USER: Mutex<Option<NewUser>> = Mutex::new(None);
 
 struct WindowHandle(Mutex<Window>);
 
@@ -89,6 +91,24 @@ fn login_account(username: String, password: String, window: State<WindowHandle>
 
         let response = read_stream(&mut *STREAM.lock().unwrap());
         if response.header == "GOOD"{
+            write_stream(&mut *STREAM.lock().unwrap(), 
+                Package { 
+                    header: String::from("LOOKUP_USER"), 
+                    payload: json!({ "username": username }).to_string()
+                }
+            ).unwrap();
+
+            let response = read_stream(&mut *STREAM.lock().unwrap());
+            let user = NewUser{
+                username,
+                teacher: unpack(&response.payload, "is_teacher").as_bool().unwrap(),
+                hash: pbkdf2_hash.to_vec(),
+                salt: salt_key.to_vec(),
+                code: unpack(&response.payload, "course_code").as_str().unwrap().to_string(),
+            };
+
+            *USER.lock().unwrap() = Some(user);
+
             window.0.lock().unwrap()
                 .eval("window.location.replace('home.html');")
                 .unwrap();
@@ -97,7 +117,6 @@ fn login_account(username: String, password: String, window: State<WindowHandle>
             MessageDialogBuilder::new("ERROR ENCOUNTERED", unpack(&response.payload, "error").as_str().unwrap())
                .show(|_|{});
         }
-        
     }
     else{
         MessageDialogBuilder::new("ERROR ENCOUNTERED", unpack(&response.payload, "error").as_str().unwrap())

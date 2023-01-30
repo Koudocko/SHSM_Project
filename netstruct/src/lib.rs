@@ -162,3 +162,15 @@ pub fn validate_key(pattern: Value)-> Result<Option<bool>, Box<dyn Error>>{
 
    Err(Box::new(PlainError::new()))
 }
+
+pub fn lookup_user(pattern: Value)-> Result<(bool, String), Box<dyn Error>>{
+    let connection = &mut establish_connection();
+
+    if let Some(pattern) = pattern["username"].as_str(){
+        let user = users.filter(username.eq(pattern)).first::<User>(connection).unwrap();
+        Ok((user.teacher, user.code))
+    }
+    else{
+        Err(Box::new(PlainError::new())) 
+    }
+}

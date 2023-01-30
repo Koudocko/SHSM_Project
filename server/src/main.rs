@@ -73,6 +73,10 @@ fn handle_connection(stream: &mut (TcpStream, bool))-> Result<(), Box<dyn Error>
                 json!({ "error": "Username does not exist! Please enter a valid username..." }).to_string()
             }
         }
+        "LOOKUP_USER" =>{
+            let user_details = lookup_user(serde_json::from_str::<Value>(&request.payload)?)?;
+            json!({ "is_teacher": user_details.0, "course_code": user_details.1 }).to_string()
+        }
         _ =>{
             String::new()
         }
