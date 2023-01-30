@@ -28,7 +28,6 @@ const SOCKET: &str = "127.0.0.1:7878";
 static STREAM: Lazy<Mutex<TcpStream>> = Lazy::new(||{
     Mutex::new(TcpStream::connect("127.0.0.1:7878").unwrap())
 });
-static USER: Mutex<Option<NewUser>> = Mutex::new(None);
 
 struct WindowHandle(Mutex<Window>);
 
@@ -47,7 +46,14 @@ fn sync_elements(){
 
         }
         Page::Home =>{
+            // write_stream(&mut *STREAM.lock().unwrap(), 
+            //     Package { 
+            //         header: String::from("GET_ACCOUNT_KEYS"), 
+            //         payload: json!({ "username": username }).to_string()
+            //     }
+            // ).unwrap();
 
+            // let response = read_stream(&mut *STREAM.lock().unwrap());
         }
     }
 }
@@ -91,23 +97,8 @@ fn login_account(username: String, password: String, window: State<WindowHandle>
 
         let response = read_stream(&mut *STREAM.lock().unwrap());
         if response.header == "GOOD"{
-            write_stream(&mut *STREAM.lock().unwrap(), 
-                Package { 
-                    header: String::from("LOOKUP_USER"), 
-                    payload: json!({ "username": username }).to_string()
-                }
-            ).unwrap();
-
-            let response = read_stream(&mut *STREAM.lock().unwrap());
-            let user = NewUser{
-                username,
-                teacher: unpack(&response.payload, "is_teacher").as_bool().unwrap(),
-                hash: pbkdf2_hash.to_vec(),
-                salt: salt_key.to_vec(),
-                code: unpack(&response.payload, "course_code").as_str().unwrap().to_string(),
-            };
-
-            *USER.lock().unwrap() = Some(user);
+            unsafe{ CURRENT_PAGE = Page::Home; };
+            sync_elements();
 
             window.0.lock().unwrap()
                 .eval("window.location.replace('home.html');")
@@ -125,7 +116,7 @@ fn login_account(username: String, password: String, window: State<WindowHandle>
 }
 
 #[tauri::command]
-fn create_account(username: String, password: String, course_code: String, is_teacher: bool, window: State<WindowHandle>){
+fn create_account(username: String, password: (String, String), course_code: String, is_teacher: bool, window: State<WindowHandle>){
     write_stream(&mut *STREAM.lock().unwrap(), 
         Package { 
             header: String::from("CHECK_ACCOUNT"), 
@@ -135,52 +126,58 @@ fn create_account(username: String, password: String, course_code: String, is_te
 
     let response = read_stream(&mut *STREAM.lock().unwrap());
     if response.header == "GOOD"{
-        write_stream(&mut *STREAM.lock().unwrap(), 
-            Package { 
-                header: String::from("CHECK_CLASS"), 
-                payload: json!({ "course_code": course_code, "is_teacher": is_teacher }).to_string()
-            }
-        ).unwrap();
-
-        let response = read_stream(&mut *STREAM.lock().unwrap());
-
-        if response.header == "GOOD"{
-            const CREDENTIAL_LEN: usize = digest::SHA512_OUTPUT_LEN;
-            let n_iter = NonZeroU32::new(100_000).unwrap();
-            let rng = rand::SystemRandom::new();
-
-            let mut salt_key = [0u8; CREDENTIAL_LEN];
-            rng.fill(&mut salt_key).unwrap();
-
-            let mut pbkdf2_hash = [0u8; CREDENTIAL_LEN];
-            pbkdf2::derive(
-                pbkdf2::PBKDF2_HMAC_SHA512,
-                n_iter,
-                &salt_key,
-                password.as_bytes(),
-                &mut pbkdf2_hash,
-            );
-            
-            let account = NewUser{ 
-                username: username.to_owned(), 
-                teacher: is_teacher,
-                hash: pbkdf2_hash.to_vec(), 
-                salt: salt_key.to_vec(),
-                code: course_code,
-            };
-
+        if password.0 == password.1{
             write_stream(&mut *STREAM.lock().unwrap(), 
                 Package { 
-                    header: String::from("CREATE_ACCOUNT"), 
-                    payload: serde_json::to_string(&account).unwrap()
+                    header: String::from("CHECK_CLASS"), 
+                    payload: json!({ "course_code": course_code, "is_teacher": is_teacher }).to_string()
                 }
             ).unwrap();
 
             let response = read_stream(&mut *STREAM.lock().unwrap());
+
             if response.header == "GOOD"{
-                window.0.lock().unwrap()
-                    .eval("document.getElementById('sign-in').scrollIntoView({behavior: 'smooth', block: 'center', inline: 'center'});")
-                    .unwrap();
+                const CREDENTIAL_LEN: usize = digest::SHA512_OUTPUT_LEN;
+                let n_iter = NonZeroU32::new(100_000).unwrap();
+                let rng = rand::SystemRandom::new();
+
+                let mut salt_key = [0u8; CREDENTIAL_LEN];
+                rng.fill(&mut salt_key).unwrap();
+
+                let mut pbkdf2_hash = [0u8; CREDENTIAL_LEN];
+                pbkdf2::derive(
+                    pbkdf2::PBKDF2_HMAC_SHA512,
+                    n_iter,
+                    &salt_key,
+                    password.0.as_bytes(),
+                    &mut pbkdf2_hash,
+                );
+                
+                let account = NewUser{ 
+                    username: username.to_owned(), 
+                    teacher: is_teacher,
+                    hash: pbkdf2_hash.to_vec(), 
+                    salt: salt_key.to_vec(),
+                    code: course_code,
+                };
+
+                write_stream(&mut *STREAM.lock().unwrap(), 
+                    Package { 
+                        header: String::from("CREATE_ACCOUNT"), 
+                        payload: serde_json::to_string(&account).unwrap()
+                    }
+                ).unwrap();
+
+                let response = read_stream(&mut *STREAM.lock().unwrap());
+                if response.header == "GOOD"{
+                    window.0.lock().unwrap()
+                        .eval("document.getElementById('sign-in').scrollIntoView({behavior: 'smooth', block: 'center', inline: 'center'});")
+                        .unwrap();
+                }
+                else{
+                    MessageDialogBuilder::new("ERROR ENCOUNTERED", unpack(&response.payload, "error").as_str().unwrap())
+                       .show(|_|{});
+                }
             }
             else{
                 MessageDialogBuilder::new("ERROR ENCOUNTERED", unpack(&response.payload, "error").as_str().unwrap())
@@ -188,7 +185,7 @@ fn create_account(username: String, password: String, course_code: String, is_te
             }
         }
         else{
-            MessageDialogBuilder::new("ERROR ENCOUNTERED", unpack(&response.payload, "error").as_str().unwrap())
+            MessageDialogBuilder::new("ERROR ENCOUNTERED", "Passwords do not match! Please change to continue...")
                .show(|_|{});
         }
     }

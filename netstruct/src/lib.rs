@@ -129,7 +129,7 @@ pub fn get_account_keys(pattern: Value)-> Result<Option<String>, Box<dyn Error>>
     }
 }
 
-pub fn validate_key(pattern: Value)-> Result<Option<bool>, Box<dyn Error>>{
+pub fn validate_key(pattern: Value)-> Result<Option<(User, bool)>, Box<dyn Error>>{
     let connection = &mut establish_connection();
 
     if let Some(user_hash) = pattern["hash"].as_array(){
@@ -152,7 +152,7 @@ pub fn validate_key(pattern: Value)-> Result<Option<bool>, Box<dyn Error>>{
                     check
                 });
 
-                return Ok(Some(verified));
+                return Ok(Some((user, verified)));
             }
             else{
                 return Ok(None);
@@ -161,16 +161,4 @@ pub fn validate_key(pattern: Value)-> Result<Option<bool>, Box<dyn Error>>{
     }
 
    Err(Box::new(PlainError::new()))
-}
-
-pub fn lookup_user(pattern: Value)-> Result<(bool, String), Box<dyn Error>>{
-    let connection = &mut establish_connection();
-
-    if let Some(pattern) = pattern["username"].as_str(){
-        let user = users.filter(username.eq(pattern)).first::<User>(connection).unwrap();
-        Ok((user.teacher, user.code))
-    }
-    else{
-        Err(Box::new(PlainError::new())) 
-    }
 }

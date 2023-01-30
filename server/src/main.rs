@@ -4,15 +4,15 @@ use std::{
     thread, error::Error
 };
 use netstruct::*;
-use netstruct::models::NewUser;
+use netstruct::models::{NewUser, User};
 use serde_json::{Value, json};
 
 // const SOCKET: &str = "192.168.2.5:7878";
 const SOCKET: &str = "127.0.0.1:7878";
 
-fn handle_connection(stream: &mut (TcpStream, bool))-> Result<(), Box<dyn Error>> {
+fn handle_connection(stream: &mut (TcpStream, Option<User>))-> Result<(), Box<dyn Error>> {
     let request = read_stream(&mut stream.0);
-    println!("REQUEST - verified: {}, payload: {request:?}", stream.1);
+    println!("REQUEST - verified: {:?}, payload: {request:?}", stream.1.is_some());
 
     let mut header = String::from("GOOD");
     let payload = match request.header.as_str(){
@@ -59,12 +59,12 @@ fn handle_connection(stream: &mut (TcpStream, bool))-> Result<(), Box<dyn Error>
         }
         "VALIDATE_KEY" =>{
             if let Some(verify) = validate_key(serde_json::from_str::<Value>(&request.payload)?)?{
-                if !verify{
+                if !verify.1{
                     header = String::from("BAD");
                     json!({ "error": "Password is invalid! Please re-enter your password..." }).to_string()
                 }
                 else{
-                    stream.1 = true;
+                    stream.1 = Some(verify.0);
                     String::new() 
                 }
             }
@@ -72,10 +72,6 @@ fn handle_connection(stream: &mut (TcpStream, bool))-> Result<(), Box<dyn Error>
                 header = String::from("BAD");
                 json!({ "error": "Username does not exist! Please enter a valid username..." }).to_string()
             }
-        }
-        "LOOKUP_USER" =>{
-            let user_details = lookup_user(serde_json::from_str::<Value>(&request.payload)?)?;
-            json!({ "is_teacher": user_details.0, "course_code": user_details.1 }).to_string()
         }
         _ =>{
             String::new()
@@ -92,7 +88,7 @@ fn handle_connection(stream: &mut (TcpStream, bool))-> Result<(), Box<dyn Error>
     Ok(())
 }
 
-fn check_connections(streams: Arc<Mutex<Vec<(TcpStream, bool)>>>){
+fn check_connections(streams: Arc<Mutex<Vec<(TcpStream, Option<User>)>>>){
     loop{
         streams.lock().unwrap().retain_mut(|stream|{
             let mut buf = [0u8];
@@ -127,7 +123,7 @@ fn main() {
     for stream in listener.incoming(){
         if let Ok(stream) = stream{
             println!("Connection established!");
-            streams.lock().unwrap().push((stream, false));
+            streams.lock().unwrap().push((stream, None));
         }
         else{
             println!("Failed to establish connection!");
