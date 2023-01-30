@@ -61,6 +61,7 @@ pub fn read_stream(stream: &mut TcpStream)-> Package{
         .read_line(&mut buf)
         .unwrap();
 
+    println!("BUF: {buf}");
     serde_json::from_str(&buf).unwrap()
 }
 
@@ -71,16 +72,37 @@ pub fn establish_connection() -> PgConnection {
         .expect(&format!("Error connecting to {}", database_url))
 }
 
-pub fn exists_in_database(pattern: Value)-> Result<bool, Box<dyn Error>>{
+pub fn check_username(pattern: Value)-> Result<bool, Box<dyn Error>>{
     let connection = &mut establish_connection();
 
-    let pattern = pattern["username"].as_str();
-    if pattern.is_none(){
-       Err(Box::new(PlainError::new())) 
+    if let Some(pattern) = pattern["username"].as_str(){
+        Ok(users.filter(username.eq(pattern)).first::<User>(connection).is_err())
     }
     else{
-        Ok(users.filter(username.eq(pattern.unwrap())).first::<User>(connection).is_ok())
+        Err(Box::new(PlainError::new())) 
     }
+}
+
+pub fn check_course_code(pattern: Value)-> Result<(bool, bool), Box<dyn Error>>{
+    let connection = &mut establish_connection();
+
+    if let Some(user_username) = pattern["course_code"].as_str(){
+        let exists = users.filter(teacher.eq(true))
+            .filter(code.eq(user_username))
+            .first::<User>(connection)
+            .is_ok();
+
+        if let Some(user_is_teacher) = pattern["is_teacher"].as_bool(){
+            if user_is_teacher{
+                return Ok((user_is_teacher, !exists));
+            }
+            else{
+                return Ok((user_is_teacher, exists));
+            }
+        }
+    }
+
+    Err(Box::new(PlainError::new())) 
 }
 
 pub fn store_in_database(new_user: NewUser)-> Result<usize, Box<dyn Error>>{
@@ -107,7 +129,7 @@ pub fn get_account_keys(pattern: Value)-> Result<Option<String>, Box<dyn Error>>
     }
 }
 
-pub fn validate_key(pattern: Value)-> Result<bool, Box<dyn Error>>{
+pub fn validate_key(pattern: Value)-> Result<Option<bool>, Box<dyn Error>>{
     let connection = &mut establish_connection();
 
     if let Some(user_hash) = pattern["hash"].as_array(){
@@ -122,16 +144,19 @@ pub fn validate_key(pattern: Value)-> Result<bool, Box<dyn Error>>{
         }).collect::<Vec<u8>>();
 
         if let Some(user_username) = pattern["username"].as_str(){
-            let user = users.filter(username.eq(user_username)).first::<User>(connection)?;
+            if let Ok(user) = users.filter(username.eq(user_username)).first::<User>(connection){
+                let mut idx = 0;
+                let verified = !user_hash.iter().any(|byte|{
+                    let check = *byte != user.hash[idx];
+                    idx += 1;
+                    check
+                });
 
-            let mut idx = 0;
-            let verified = !user_hash.iter().any(|byte|{
-                let check = *byte != user.hash[idx];
-                idx += 1;
-                check
-            });
-
-            return Ok(verified);
+                return Ok(Some(verified));
+            }
+            else{
+                return Ok(None);
+            }
         }
     }
 

@@ -116,42 +116,57 @@ fn create_account(username: String, password: String, course_code: String, is_te
 
     let response = read_stream(&mut *STREAM.lock().unwrap());
     if response.header == "GOOD"{
-        const CREDENTIAL_LEN: usize = digest::SHA512_OUTPUT_LEN;
-        let n_iter = NonZeroU32::new(100_000).unwrap();
-        let rng = rand::SystemRandom::new();
-
-        let mut salt_key = [0u8; CREDENTIAL_LEN];
-        rng.fill(&mut salt_key).unwrap();
-
-        let mut pbkdf2_hash = [0u8; CREDENTIAL_LEN];
-        pbkdf2::derive(
-            pbkdf2::PBKDF2_HMAC_SHA512,
-            n_iter,
-            &salt_key,
-            password.as_bytes(),
-            &mut pbkdf2_hash,
-        );
-        
-        let account = NewUser{ 
-            username: username.to_owned(), 
-            teacher: is_teacher,
-            hash: pbkdf2_hash.to_vec(), 
-            salt: salt_key.to_vec(),
-            code: course_code,
-        };
-
         write_stream(&mut *STREAM.lock().unwrap(), 
             Package { 
-                header: String::from("CREATE_ACCOUNT"), 
-                payload: serde_json::to_string(&account).unwrap()
+                header: String::from("CHECK_CLASS"), 
+                payload: json!({ "course_code": course_code, "is_teacher": is_teacher }).to_string()
             }
         ).unwrap();
 
         let response = read_stream(&mut *STREAM.lock().unwrap());
+
         if response.header == "GOOD"{
-            window.0.lock().unwrap()
-                .eval("document.getElementById('sign-in').scrollIntoView({behavior: 'smooth', block: 'center', inline: 'center'});")
-                .unwrap();
+            const CREDENTIAL_LEN: usize = digest::SHA512_OUTPUT_LEN;
+            let n_iter = NonZeroU32::new(100_000).unwrap();
+            let rng = rand::SystemRandom::new();
+
+            let mut salt_key = [0u8; CREDENTIAL_LEN];
+            rng.fill(&mut salt_key).unwrap();
+
+            let mut pbkdf2_hash = [0u8; CREDENTIAL_LEN];
+            pbkdf2::derive(
+                pbkdf2::PBKDF2_HMAC_SHA512,
+                n_iter,
+                &salt_key,
+                password.as_bytes(),
+                &mut pbkdf2_hash,
+            );
+            
+            let account = NewUser{ 
+                username: username.to_owned(), 
+                teacher: is_teacher,
+                hash: pbkdf2_hash.to_vec(), 
+                salt: salt_key.to_vec(),
+                code: course_code,
+            };
+
+            write_stream(&mut *STREAM.lock().unwrap(), 
+                Package { 
+                    header: String::from("CREATE_ACCOUNT"), 
+                    payload: serde_json::to_string(&account).unwrap()
+                }
+            ).unwrap();
+
+            let response = read_stream(&mut *STREAM.lock().unwrap());
+            if response.header == "GOOD"{
+                window.0.lock().unwrap()
+                    .eval("document.getElementById('sign-in').scrollIntoView({behavior: 'smooth', block: 'center', inline: 'center'});")
+                    .unwrap();
+            }
+            else{
+                MessageDialogBuilder::new("ERROR ENCOUNTERED", unpack(&response.payload, "error").as_str().unwrap())
+                   .show(|_|{});
+            }
         }
         else{
             MessageDialogBuilder::new("ERROR ENCOUNTERED", unpack(&response.payload, "error").as_str().unwrap())
