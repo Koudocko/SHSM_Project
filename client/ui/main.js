@@ -1,3 +1,10 @@
+function sync_elements(){
+    const { invoke } = window.__TAURI__.tauri 
+
+    invoke('sync_elements')
+			.then(() =>{});
+}
+
 function create_account(){
     const { invoke } = window.__TAURI__.tauri 
 

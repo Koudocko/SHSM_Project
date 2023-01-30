@@ -3,13 +3,12 @@
   windows_subsystem = "windows"
 )]
 
-use std::borrow::BorrowMut;
 use std::{
     net::TcpStream,
     sync::Mutex,
 };
 use netstruct::*;
-use netstruct::models::NewUser;
+use netstruct::models::{NewUser, Announcement};
 use ring::rand::SecureRandom;
 use ring::{digest, pbkdf2, rand};
 use std::num::NonZeroU32;
@@ -28,11 +27,29 @@ const SOCKET: &str = "127.0.0.1:7878";
 static STREAM: Lazy<Mutex<TcpStream>> = Lazy::new(||{
     Mutex::new(TcpStream::connect("127.0.0.1:7878").unwrap())
 });
+static mut IS_TEACHER: bool = false; 
 
 struct WindowHandle(Mutex<Window>);
 
-fn sync_elements(){
-    match unsafe{CURRENT_PAGE.clone()}{
+#[tauri::command]
+fn add_announcement(title: String, description: String, window: State<WindowHandle>){
+    write_stream(&mut *STREAM.lock().unwrap(), 
+        Package { 
+            header: String::from("ADD_ANNOUNCEMENT"), 
+            payload: json!({ "title": title, "description": description }).to_string()
+        }
+    ).unwrap();
+
+    let response = read_stream(&mut *STREAM.lock().unwrap());
+
+    if response.header == "GOOD"{
+        sync_elements(window);
+    }
+}
+
+#[tauri::command]
+fn sync_elements(window: State<WindowHandle>){
+    match unsafe{ CURRENT_PAGE.clone() }{
         Page::Certifications =>{
 
         }
@@ -46,14 +63,39 @@ fn sync_elements(){
 
         }
         Page::Home =>{
-            // write_stream(&mut *STREAM.lock().unwrap(), 
-            //     Package { 
-            //         header: String::from("GET_ACCOUNT_KEYS"), 
-            //         payload: json!({ "username": username }).to_string()
-            //     }
-            // ).unwrap();
+            write_stream(&mut *STREAM.lock().unwrap(), 
+                Package { 
+                    header: String::from("GET_ANNOUNCEMENTS"), 
+                    payload: String::new()
+                }
+            ).unwrap();
 
-            // let response = read_stream(&mut *STREAM.lock().unwrap());
+            let response = read_stream(&mut *STREAM.lock().unwrap());
+
+            window.0.lock().unwrap()
+                .eval("document.getElementById('posted-announcement-container').innerHTML = '';")
+                .unwrap();
+
+            for announcement in unpack(&response.payload, "announcements").as_array().unwrap(){
+                let announcement: Announcement = serde_json::from_value(announcement.clone()).unwrap();
+                println!("ANNOUNCEMENT:");
+                println!("title: {}", announcement.title);
+                println!("description: {}", announcement.description);
+                
+                window.0.lock().unwrap()
+                    .eval(&format!("
+                        console.log('test');
+
+                        var announcement = `
+                        <div class='announcement'>
+                            <div class='title'>{}</div>
+                            <div class='description'>{}</div>
+                        </div>`;
+                        document.getElementById('posted-announcement-container').innerHTML += announcement;
+                    ", announcement.title, announcement.description))
+                    .unwrap();
+                println!("sent");
+            }
         }
     }
 }
@@ -97,11 +139,18 @@ fn login_account(username: String, password: String, window: State<WindowHandle>
 
         let response = read_stream(&mut *STREAM.lock().unwrap());
         if response.header == "GOOD"{
-            unsafe{ CURRENT_PAGE = Page::Home; };
-            sync_elements();
+            let page_name = unsafe{ 
+                CURRENT_PAGE = Page::Home; 
+                IS_TEACHER = unpack(&response.payload, "is_teacher").as_bool().unwrap();
+
+                if IS_TEACHER
+                { "teacher_home.html" }
+                else
+                { "student_home.html" }
+            };
 
             window.0.lock().unwrap()
-                .eval("window.location.replace('home.html');")
+                .eval(&format!("window.location.replace('{page_name}');"))
                 .unwrap();
         }
         else{
@@ -202,7 +251,7 @@ async fn main(){
             app.manage(WindowHandle(Mutex::new(app.get_window("main").unwrap())));
             Ok(())
         })
-        .invoke_handler(tauri::generate_handler![create_account, login_account])
+        .invoke_handler(tauri::generate_handler![create_account, login_account, add_announcement, sync_elements])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");
 }

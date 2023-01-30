@@ -2,7 +2,7 @@ use serde::{Serialize, Deserialize};
 use diesel::prelude::*;
 use crate::schema::*;
 
-#[derive(Identifiable, Queryable)]
+#[derive(Identifiable, Queryable, Clone)]
 pub struct User{
     pub id: i32,
     pub username: String,
@@ -25,6 +25,7 @@ pub struct NewUser {
 
 #[derive(Identifiable, Queryable, Associations)]
 #[diesel(belongs_to(User))]
+#[derive(Serialize, Deserialize)]
 pub struct Announcement{
     pub id: i32,
     pub title: String,
@@ -34,6 +35,7 @@ pub struct Announcement{
 
 #[derive(Insertable)]
 #[diesel(table_name = announcements)]
+#[derive(Serialize, Deserialize)]
 pub struct NewAnnouncement {
     pub title: String,
     pub description: String,

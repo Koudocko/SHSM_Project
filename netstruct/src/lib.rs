@@ -3,7 +3,7 @@ use std::{
     io::{prelude::*, BufReader},
     net::TcpStream, error::Error
 };
-use schema::users::dsl::*;
+use schema::{users::dsl::*, announcements::description};
 use diesel::{
     pg::PgConnection,
     prelude::*,
@@ -31,9 +31,9 @@ pub struct Package{
 }
 
 #[derive(Debug, Clone)]
-struct PlainError;
+pub struct PlainError;
 impl PlainError{
-    fn new()-> PlainError{ PlainError }
+    pub fn new()-> PlainError{ PlainError }
 }
 impl fmt::Display for PlainError{
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
@@ -72,27 +72,27 @@ pub fn establish_connection() -> PgConnection {
         .expect(&format!("Error connecting to {}", database_url))
 }
 
-pub fn check_username(pattern: Value)-> Result<bool, Box<dyn Error>>{
+pub fn check_username(payload: Value)-> Result<bool, Box<dyn Error>>{
     let connection = &mut establish_connection();
 
-    if let Some(pattern) = pattern["username"].as_str(){
-        Ok(users.filter(username.eq(pattern)).first::<User>(connection).is_err())
+    if let Some(payload) = payload["username"].as_str(){
+        Ok(users.filter(username.eq(payload)).first::<User>(connection).is_err())
     }
     else{
         Err(Box::new(PlainError::new())) 
     }
 }
 
-pub fn check_course_code(pattern: Value)-> Result<(bool, bool), Box<dyn Error>>{
+pub fn check_course_code(payload: Value)-> Result<(bool, bool), Box<dyn Error>>{
     let connection = &mut establish_connection();
 
-    if let Some(user_username) = pattern["course_code"].as_str(){
+    if let Some(user_username) = payload["course_code"].as_str(){
         let exists = users.filter(teacher.eq(true))
             .filter(code.eq(user_username))
             .first::<User>(connection)
             .is_ok();
 
-        if let Some(user_is_teacher) = pattern["is_teacher"].as_bool(){
+        if let Some(user_is_teacher) = payload["is_teacher"].as_bool(){
             if user_is_teacher{
                 return Ok((user_is_teacher, !exists));
             }
@@ -113,11 +113,11 @@ pub fn store_in_database(new_user: NewUser)-> Result<usize, Box<dyn Error>>{
         .execute(connection)?)
 }
 
-pub fn get_account_keys(pattern: Value)-> Result<Option<String>, Box<dyn Error>>{
+pub fn get_account_keys(payload: Value)-> Result<Option<String>, Box<dyn Error>>{
     let connection = &mut establish_connection();
 
-    if let Some(pattern) = pattern["username"].as_str(){
-        if let Ok(user) = users.filter(username.eq(pattern)).first::<User>(connection){
+    if let Some(payload) = payload["username"].as_str(){
+        if let Ok(user) = users.filter(username.eq(payload)).first::<User>(connection){
             Ok(Some(json!({ "salt": user.salt }).to_string()))
         }
         else{
@@ -129,10 +129,10 @@ pub fn get_account_keys(pattern: Value)-> Result<Option<String>, Box<dyn Error>>
     }
 }
 
-pub fn validate_key(pattern: Value)-> Result<Option<(User, bool)>, Box<dyn Error>>{
+pub fn validate_key(payload: Value)-> Result<Option<(User, bool)>, Box<dyn Error>>{
     let connection = &mut establish_connection();
 
-    if let Some(user_hash) = pattern["hash"].as_array(){
+    if let Some(user_hash) = payload["hash"].as_array(){
         let user_hash = user_hash.into_iter().map(|byte|{
             if let Some(byte) = byte.as_u64(){
                 if let Ok(byte) = u8::try_from(byte){
@@ -143,7 +143,7 @@ pub fn validate_key(pattern: Value)-> Result<Option<(User, bool)>, Box<dyn Error
             0
         }).collect::<Vec<u8>>();
 
-        if let Some(user_username) = pattern["username"].as_str(){
+        if let Some(user_username) = payload["username"].as_str(){
             if let Ok(user) = users.filter(username.eq(user_username)).first::<User>(connection){
                 let mut idx = 0;
                 let verified = !user_hash.iter().any(|byte|{
@@ -161,4 +161,40 @@ pub fn validate_key(pattern: Value)-> Result<Option<(User, bool)>, Box<dyn Error
     }
 
    Err(Box::new(PlainError::new()))
+}
+
+pub fn get_announcements(class_code: &str)-> Vec<Announcement>{
+    let connection = &mut establish_connection();
+
+    let course = users.filter(teacher.eq(true))
+        .filter(code.eq(class_code))
+        .first::<User>(connection)
+        .unwrap();
+
+    Announcement::belonging_to(&course)
+        .load::<Announcement>(connection)
+        .expect("Error loading announcements")
+}
+
+pub fn add_announcement(payload: Value, user_id: i32)-> Result<(), Box<dyn Error>>{
+    let connection = &mut establish_connection();
+
+    if let Some(announcement_title) = payload["title"].as_str(){
+        if let Some(announcement_description) = payload["description"].as_str(){
+            let new_announcement = NewAnnouncement{
+                title: announcement_title.to_owned(),
+                description: announcement_description.to_owned(),
+                user_id
+            };
+
+            diesel::insert_into(schema::announcements::table)
+                .values(&new_announcement)
+                .execute(connection)
+                .expect("Failed to insert announcment!");
+            }
+
+        return Ok(());
+    }
+
+    Err(Box::new(PlainError::new()))
 }

@@ -64,13 +64,30 @@ fn handle_connection(stream: &mut (TcpStream, Option<User>))-> Result<(), Box<dy
                     json!({ "error": "Password is invalid! Please re-enter your password..." }).to_string()
                 }
                 else{
-                    stream.1 = Some(verify.0);
-                    String::new() 
+                    stream.1 = Some(verify.0.clone());
+                    json!({ "is_teacher": verify.0.teacher }).to_string()
                 }
             }
             else{
                 header = String::from("BAD");
                 json!({ "error": "Username does not exist! Please enter a valid username..." }).to_string()
+            }
+        }
+        "GET_ANNOUNCEMENTS" =>{
+            if let Some(user) = &stream.1{
+                json!({ "announcements": get_announcements(&user.code) }).to_string()
+            }
+            else{
+               return Err(Box::new(PlainError::new()))
+            }
+        }
+        "ADD_ANNOUNCEMENT" =>{
+            if let Some(user) = &stream.1{
+                add_announcement(serde_json::from_str::<Value>(&request.payload)?, user.id)?;
+                String::new()
+            }
+            else{
+               return Err(Box::new(PlainError::new()));
             }
         }
         _ =>{
