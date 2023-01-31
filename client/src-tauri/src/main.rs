@@ -3,6 +3,7 @@
   windows_subsystem = "windows"
 )]
 
+use std::thread;
 use std::{
     net::TcpStream,
     sync::Mutex,
@@ -30,6 +31,18 @@ static STREAM: Lazy<Mutex<TcpStream>> = Lazy::new(||{
 static mut IS_TEACHER: bool = false; 
 
 struct WindowHandle(Mutex<Window>);
+
+#[tauri::command]
+fn add_event(title: String, description: String, date: String, certification: bool){
+    write_stream(&mut *STREAM.lock().unwrap(), 
+        Package { 
+            header: String::from("ADD_EVENT"), 
+            payload: json!({ "title": title, "description": description, "date": date, "certification": certification }).to_string()
+        }
+    ).unwrap();
+
+    let response = read_stream(&mut *STREAM.lock().unwrap());
+}
 
 #[tauri::command]
 fn add_announcement(title: String, description: String, window: State<WindowHandle>){

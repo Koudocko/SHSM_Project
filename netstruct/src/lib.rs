@@ -1,9 +1,9 @@
 use serde::{Serialize, Deserialize};
+use schema::*;
 use std::{
     io::{prelude::*, BufReader},
     net::TcpStream, error::Error
 };
-use schema::{users::dsl::*, announcements::description};
 use diesel::{
     pg::PgConnection,
     prelude::*,
@@ -76,7 +76,7 @@ pub fn check_username(payload: Value)-> Result<bool, Box<dyn Error>>{
     let connection = &mut establish_connection();
 
     if let Some(payload) = payload["username"].as_str(){
-        Ok(users.filter(username.eq(payload)).first::<User>(connection).is_err())
+        Ok(users::dsl::users.filter(users::dsl::username.eq(payload)).first::<User>(connection).is_err())
     }
     else{
         Err(Box::new(PlainError::new())) 
@@ -87,8 +87,8 @@ pub fn check_course_code(payload: Value)-> Result<(bool, bool), Box<dyn Error>>{
     let connection = &mut establish_connection();
 
     if let Some(user_username) = payload["course_code"].as_str(){
-        let exists = users.filter(teacher.eq(true))
-            .filter(code.eq(user_username))
+        let exists = users::dsl::users.filter(users::dsl::teacher.eq(true))
+            .filter(users::dsl::code.eq(user_username))
             .first::<User>(connection)
             .is_ok();
 
@@ -117,7 +117,7 @@ pub fn get_account_keys(payload: Value)-> Result<Option<String>, Box<dyn Error>>
     let connection = &mut establish_connection();
 
     if let Some(payload) = payload["username"].as_str(){
-        if let Ok(user) = users.filter(username.eq(payload)).first::<User>(connection){
+        if let Ok(user) = users::dsl::users.filter(users::dsl::username.eq(payload)).first::<User>(connection){
             Ok(Some(json!({ "salt": user.salt }).to_string()))
         }
         else{
@@ -144,7 +144,7 @@ pub fn validate_key(payload: Value)-> Result<Option<(User, bool)>, Box<dyn Error
         }).collect::<Vec<u8>>();
 
         if let Some(user_username) = payload["username"].as_str(){
-            if let Ok(user) = users.filter(username.eq(user_username)).first::<User>(connection){
+            if let Ok(user) = users::dsl::users.filter(users::dsl::username.eq(user_username)).first::<User>(connection){
                 let mut idx = 0;
                 let verified = !user_hash.iter().any(|byte|{
                     let check = *byte != user.hash[idx];
@@ -166,8 +166,8 @@ pub fn validate_key(payload: Value)-> Result<Option<(User, bool)>, Box<dyn Error
 pub fn get_announcements(class_code: &str)-> Vec<Announcement>{
     let connection = &mut establish_connection();
 
-    let course = users.filter(teacher.eq(true))
-        .filter(code.eq(class_code))
+    let course = users::dsl::users.filter(users::dsl::teacher.eq(true))
+        .filter(users::dsl::code.eq(class_code))
         .first::<User>(connection)
         .unwrap();
 
@@ -176,7 +176,7 @@ pub fn get_announcements(class_code: &str)-> Vec<Announcement>{
         .expect("Error loading announcements")
 }
 
-pub fn add_announcement(payload: Value, user_id: i32)-> Result<(), Box<dyn Error>>{
+pub fn add_announcement(payload: Value, shsm_id: i32)-> Result<(), Box<dyn Error>>{
     let connection = &mut establish_connection();
 
     if let Some(announcement_title) = payload["title"].as_str(){
@@ -184,32 +184,130 @@ pub fn add_announcement(payload: Value, user_id: i32)-> Result<(), Box<dyn Error
             let new_announcement = NewAnnouncement{
                 title: announcement_title.to_owned(),
                 description: announcement_description.to_owned(),
-                user_id
+                user_id: shsm_id,
             };
 
             diesel::insert_into(schema::announcements::table)
                 .values(&new_announcement)
                 .execute(connection)
                 .expect("Failed to insert announcment!");
-            }
 
-        return Ok(());
+            return Ok(());
+        }
     }
 
     Err(Box::new(PlainError::new()))
 }
 
-pub fn get_certifications(name: &str)-> Vec<Event>{
+pub fn get_shsm_events(class_code: &str)-> Vec<Event>{
     let connection = &mut establish_connection();
 
-    let user = users.filter(username.eq(name))
+    let course = users::dsl::users.filter(users::dsl::teacher.eq(true))
+        .filter(users::dsl::code.eq(class_code))
+        .first::<User>(connection)
+        .unwrap();
+
+    Event::belonging_to(&course)
+        .load::<Event>(connection)
+        .expect("Error loading announcements")
+}
+
+pub fn get_user_events(name: &str)-> Vec<Event>{
+    let connection = &mut establish_connection();
+
+    let user = users::dsl::users.filter(users::dsl::username.eq(name))
         .first::<User>(connection)
         .unwrap();
 
     Event::belonging_to(&user)
         .load::<Event>(connection)
         .expect("Error loading certifications!")
-        .into_iter()
-        .filter(|event| event.certification)
-        .collect()
+}
+
+
+pub fn add_shsm_event(payload: Value, shsm_id: i32)-> Result<bool, Box<dyn Error>>{
+    let connection = &mut establish_connection();
+
+    if let Some(event_title) = payload["title"].as_str(){
+        if let Some(event_description) = payload["description"].as_str(){
+            if let Some(event_date) = payload["data"].as_str(){
+                if let Some(event_certification) = payload["certification"].as_bool(){
+                    if let Some(event_completed) = payload["completed"].as_bool(){
+                        let exists = events::dsl::events.filter(events::dsl::title.eq(event_title)).first::<Event>(connection).is_err();
+
+                        if !exists{
+                            let new_event = NewEvent{
+                                title: event_title.to_owned(),
+                                description: event_description.to_owned(),
+                                date: event_date.to_owned(),
+                                certification: event_certification,
+                                completed: event_completed,
+                                user_id: shsm_id
+                            };
+
+                            diesel::insert_into(schema::events::table)
+                                .values(&new_event)
+                                .execute(connection)
+                                .expect("Failed to insert event!");
+                        }
+
+                        return Ok(!exists);
+                    }
+                }
+            }
+        }
+    }
+
+    Err(Box::new(PlainError::new()))
+}
+
+pub fn add_user_event(payload: Value, user_id: i32, class_code: &str)-> Result<(), Box<dyn Error>>{
+    let connection = &mut establish_connection();
+
+    if let Some(event_title) = payload["title"].as_str(){
+        let course = users::dsl::users.filter(users::dsl::teacher.eq(true))
+            .filter(users::dsl::code.eq(class_code))
+            .first::<User>(connection)
+            .unwrap();
+
+        if let Some(shsm_event) = Event::belonging_to(&course)
+            .load::<Event>(connection)
+            .expect("Error loading announcements")
+            .into_iter()
+            .filter(|event| event.title == event_title)
+            .next()
+        {
+            let new_event = NewEvent{
+                title: shsm_event.title,
+                description: shsm_event.description,
+                date: shsm_event.date,
+                certification: shsm_event.certification,
+                completed: shsm_event.completed,
+                user_id,
+            };
+
+            diesel::insert_into(schema::events::table)
+                .values(&new_event)
+                .execute(connection)
+                .expect("Failed to insert event!");
+
+            return Ok(());
+        }
+    }
+
+    Err(Box::new(PlainError::new()))
+}
+
+
+pub fn remove_user_event(payload: Value, user_id: i32)-> Result<(), Box<dyn Error>>{
+    let connection = &mut establish_connection();
+
+    if let Some(event_title) = payload["title"].as_str(){
+        diesel::delete(events::dsl::events.filter(events::dsl::title.eq(event_title)).filter(events::dsl::user_id.eq(user_id)))
+            .execute(connection)?;
+
+        return Ok(());
+    }
+
+    Err(Box::new(PlainError::new()))
 }

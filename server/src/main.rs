@@ -95,14 +95,73 @@ fn handle_connection(stream: &mut (TcpStream, Option<User>))-> Result<(), Box<dy
                return Err(Box::new(PlainError::new()));
             }
         }
-        "GET_CERTIFICATIONS" =>{
+        "GET_USER_EVENTS" =>{
             if let Some(user) = &stream.1{
-                json!({ "certifications": get_certifications(&user.username) }).to_string()
+                json!({ "events": get_user_events(&user.username) }).to_string()
             }
             else{
                return Err(Box::new(PlainError::new()))
             }
         }
+        "GET_SHSM_EVENTS" =>{
+            if let Some(user) = &stream.1{
+                json!({ "events": get_shsm_events(&user.code) }).to_string()
+            }
+            else{
+               return Err(Box::new(PlainError::new()))
+            }
+        }
+        "ADD_SHSM_EVENT" =>{
+            if let Some(user) = &stream.1{
+                if user.teacher{
+                    if add_shsm_event(serde_json::from_str::<Value>(&request.payload)?, user.id)?{
+                        String::new()
+                    }
+                    else{
+                        header = String::from("BAD");
+                        json!({ "error": "Username does not exist! Please enter a valid username..." }).to_string()
+                    }
+                }
+                else{
+                   return Err(Box::new(PlainError::new()));
+                }
+            }
+            else{
+               return Err(Box::new(PlainError::new()));
+            }
+        }
+        "ADD_USER_EVENT" =>{
+            if let Some(user) = &stream.1{
+                add_user_event(serde_json::from_str::<Value>(&request.payload)?, user.id, &user.code)?;
+                String::new()
+            }
+            else{
+               return Err(Box::new(PlainError::new()));
+            }
+        }
+        "REMOVE_USER_EVENT" =>{
+            if let Some(user) = &stream.1{
+                remove_user_event(serde_json::from_str::<Value>(&request.payload)?, user.id)?;
+                String::new()
+            }
+            else{
+               return Err(Box::new(PlainError::new()));
+            }
+        }
+        // "CERTIFY_USER" =>{
+        //     if let Some(user) = &stream.1{
+        //         if user.teacher{
+        //             certify_user(serde_json::from_str::<Value>(&request.payload)?, &user.code)?;
+        //             String::new()
+        //         }
+        //         else{
+        //            return Err(Box::new(PlainError::new()));
+        //         }
+        //     }
+        //     else{
+        //        return Err(Box::new(PlainError::new()));
+        //     }
+        // }
         _ =>{
             String::new()
         }
