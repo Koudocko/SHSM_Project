@@ -35,3 +35,4 @@ closeButtons.forEach(button => {
         modal.style.display = 'none';
     });
 });
+

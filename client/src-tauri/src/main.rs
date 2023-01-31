@@ -8,7 +8,7 @@ use std::{
     sync::Mutex,
 };
 use netstruct::*;
-use netstruct::models::{NewUser, Announcement};
+use netstruct::models::{NewUser, Announcement, Event};
 use ring::rand::SecureRandom;
 use ring::{digest, pbkdf2, rand};
 use std::num::NonZeroU32;
@@ -25,7 +25,7 @@ static mut CURRENT_PAGE: Page = Page::Login;
 // const SOCKET: &str = "als-kou.ddns.net:7878";
 const SOCKET: &str = "127.0.0.1:7878";
 static STREAM: Lazy<Mutex<TcpStream>> = Lazy::new(||{
-    Mutex::new(TcpStream::connect("127.0.0.1:7878").unwrap())
+    Mutex::new(TcpStream::connect(SOCKET).unwrap())
 });
 static mut IS_TEACHER: bool = false; 
 
@@ -51,7 +51,33 @@ fn add_announcement(title: String, description: String, window: State<WindowHand
 fn sync_elements(window: State<WindowHandle>){
     match unsafe{ CURRENT_PAGE.clone() }{
         Page::Certifications =>{
+            write_stream(&mut *STREAM.lock().unwrap(), 
+                Package { 
+                    header: String::from("GET_CERTIFICATIONS"), 
+                    payload: String::new()
+                }
+            ).unwrap();
 
+            let response = read_stream(&mut *STREAM.lock().unwrap());
+
+            // window.0.lock().unwrap()
+            //     .eval("document.getElementById('posted-announcement-container').innerHTML = '';")
+                // .unwrap();
+
+            for certification in unpack(&response.payload, "certifications").as_array().unwrap(){
+                let certification: Event = serde_json::from_value(certification.clone()).unwrap();
+                
+                // window.0.lock().unwrap()
+                //     .eval(&format!("
+                //         var announcement = `
+                //         <div class='announcement'>
+                //             <div class='title'>{}</div>
+                //             <div class='description'>{}</div>
+                //         </div>`;
+                //         document.getElementById('posted-announcement-container').innerHTML += announcement;
+                //     ", announcement.title, announcement.description))
+                //     .unwrap();
+            }
         }
         Page::ShsmSelection =>{
 
@@ -78,14 +104,9 @@ fn sync_elements(window: State<WindowHandle>){
 
             for announcement in unpack(&response.payload, "announcements").as_array().unwrap(){
                 let announcement: Announcement = serde_json::from_value(announcement.clone()).unwrap();
-                println!("ANNOUNCEMENT:");
-                println!("title: {}", announcement.title);
-                println!("description: {}", announcement.description);
                 
                 window.0.lock().unwrap()
                     .eval(&format!("
-                        console.log('test');
-
                         var announcement = `
                         <div class='announcement'>
                             <div class='title'>{}</div>
@@ -94,7 +115,6 @@ fn sync_elements(window: State<WindowHandle>){
                         document.getElementById('posted-announcement-container').innerHTML += announcement;
                     ", announcement.title, announcement.description))
                     .unwrap();
-                println!("sent");
             }
         }
     }
