@@ -44,6 +44,7 @@ pub struct NewAnnouncement {
 
 #[derive(Identifiable, Queryable, Associations)]
 #[diesel(belongs_to(User))]
+#[derive(Serialize, Deserialize)]
 pub struct Event{
     pub id: i32,
     pub title: String,

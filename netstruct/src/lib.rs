@@ -198,3 +198,18 @@ pub fn add_announcement(payload: Value, user_id: i32)-> Result<(), Box<dyn Error
 
     Err(Box::new(PlainError::new()))
 }
+
+pub fn get_certifications(name: &str)-> Vec<Event>{
+    let connection = &mut establish_connection();
+
+    let user = users.filter(username.eq(name))
+        .first::<User>(connection)
+        .unwrap();
+
+    Event::belonging_to(&user)
+        .load::<Event>(connection)
+        .expect("Error loading certifications!")
+        .into_iter()
+        .filter(|event| event.certification)
+        .collect()
+}
