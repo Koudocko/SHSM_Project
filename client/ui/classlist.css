@@ -1,6 +1,7 @@
 .container {
-    max-width: 800px;
-    margin: 0 auto;
+    max-width: px;
+    margin: 0;
+    padding: 0;
   }
   
   h1 {
@@ -11,6 +12,7 @@
   table {
     width: 100%;
     margin-top: 45px;
+    padding: 0;
     border-collapse: collapse;
     box-shadow: black;
   }
@@ -19,6 +21,7 @@
     border: 1px solid #dddddd;
     padding: 8px;
     text-align: left;
+
   }
   
   th {
@@ -26,7 +29,7 @@
     color: white;
   }
   
-  .edit-btn, .reset-btn {
+  .edit-btn, .reset-btn, .rmv-btn, .addcrt-btn {
     background-color: #8F4B96;
     color: white;
     border: none;
@@ -34,7 +37,7 @@
     cursor: pointer;
   }
   
-  .edit-btn:hover, .reset-btn:hover {
+  .edit-btn:hover, .reset-btn:hover, .rmv-btn:hover, .addcrt-btn:hover {
     background-color: #6B3E72;
   }
   
