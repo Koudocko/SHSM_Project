@@ -27,6 +27,24 @@ editButtons.forEach(button => {
     });
 });
 
+// Event listener for clicking on add certification.
+const addButton = document.querySelectorAll(".addcrt-btn");
+addButton.forEach(button => {
+    button.addEventListener('click', () => {
+        const modal = document.querySelector("#add-modal");
+        modal.style.display = 'block';
+    });
+});
+
+// Event listener for clicking on add certification.
+const eventButton = document.querySelectorAll(".event-btn");
+eventButton.forEach(button => {
+    button.addEventListener('click', () => {
+        const modal = document.querySelector("#event-modal");
+        modal.style.display = 'block';
+    });
+});
+
 // Add event listener to the close buttons in the modals
 const closeButtons = document.querySelectorAll('.close-btn');
 closeButtons.forEach(button => {
@@ -35,4 +53,5 @@ closeButtons.forEach(button => {
         modal.style.display = 'none';
     });
 });
+
 

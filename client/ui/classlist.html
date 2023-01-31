@@ -73,6 +73,9 @@
                 </td>
                 <td>
                   <button class="edit-btn">edit</button>
+                  <button class="rmv-btn">remove</button>
+                  <button class="addcrt-btn">add certification</button>
+                  <button class="event-btn">event</button>
                 </td>
               </tr>
               <tr>
@@ -83,8 +86,6 @@
                 </td>
                 <td>
                   <button class="edit-btn">edit</button>
-                  <button class="rmv-btn">remove</button>
-                  <button class="addcrt-btn">add certification</button>
                 </td>
               </tr>
               <tr>
@@ -242,6 +243,35 @@
                   <input type="text" id="edit-username" value="johndoe" required>
                   <label for="edit-password">Password:</label>
                   <input type="" id="edit-password" value="********" required>
+                  <button type="submit" class="save-btn">Save</button>
+                </form>
+              </div>
+            </div>
+
+            <div class="modal" id="add-modal">
+              <div class="modal-content">
+                <span class="close-btn">&times;</span>
+                <h2>Student Certifications</h2>
+                <form>
+                  <input type="checkbox" name="cpr" value="cpr">
+                  <label for="cpr">cpr</label><br>
+                  <input type="checkbox" name="x" value="x">
+                  <label for="x">x</label><br>
+                  <button type="submit" class="save-btn">Save</button>
+                </form>
+              </div>
+            </div>
+
+
+            <div class="modal" id="event-modal">
+              <div class="modal-content">
+                <span class="close-btn">&times;</span>
+                <h2>Student Events</h2>
+                <form>
+                  <input type="checkbox" name="cpr" value="cpr">
+                  <label for="cpr">cpr</label><br>
+                  <input type="checkbox" name="x" value="x">
+                  <label for="x">x</label><br>
                   <button type="submit" class="save-btn">Save</button>
                 </form>
               </div>

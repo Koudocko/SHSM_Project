@@ -29,7 +29,7 @@
     color: white;
   }
   
-  .edit-btn, .reset-btn, .rmv-btn, .addcrt-btn {
+  .edit-btn, .reset-btn, .rmv-btn, .addcrt-btn, .event-btn {
     background-color: #8F4B96;
     color: white;
     border: none;
