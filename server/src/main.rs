@@ -11,6 +11,7 @@ use serde_json::{Value, json};
 const SOCKET: &str = "127.0.0.1:7878";
 
 fn handle_connection(stream: &mut (TcpStream, Option<User>))-> Result<(), Box<dyn Error>> {
+    stream.0.set_nonblocking(false).unwrap();
     let request = read_stream(&mut stream.0);
     println!("REQUEST - verified: {:?}, payload: {request:?}", stream.1.is_some());
 
@@ -282,6 +283,7 @@ fn check_connections(streams: Arc<Mutex<Vec<(TcpStream, Option<User>)>>>){
     loop{
         streams.lock().unwrap().retain_mut(|stream|{
             let mut buf = [0u8];
+            stream.0.set_nonblocking(true).unwrap();
             if let Ok(peeked) = stream.0.peek(&mut buf){
                 if peeked != 0{
                     if handle_connection(stream).is_err(){
@@ -310,6 +312,7 @@ fn main() {
         if let Ok(stream) = stream{
             println!("Connection established!");
             streams.lock().unwrap().push((stream, None));
+            println!("Connection added!");
         }
         else{
             println!("Failed to establish connection!");
