@@ -264,6 +264,7 @@ fn sync_elements(page_name: String, window: State<WindowHandle>){
                                 <div class='title'>{}</div>
                                 <div class='description'>{}</div>
                                 <div class='date'>{}</div>
+                                <button class='delete'>delete</button>
                             </div>`;
                             document.getElementById('posted-announcement-container').innerHTML += announcement;
                         ", announcement.title, announcement.description, announcement.date))
