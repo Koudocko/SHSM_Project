@@ -22,8 +22,8 @@ use tauri::{
 use serde_json::json;
 
 static mut CURRENT_PAGE: String = String::new();
-// const SOCKET: &str = "als-kou.ddns.net:7878";
-const SOCKET: &str = "127.0.0.1:7878";
+const SOCKET: &str = "als-kou.ddns.net:7878";
+//const SOCKET: &str = "127.0.0.1:7878";
 static STREAM: Lazy<Mutex<TcpStream>> = Lazy::new(||{
     Mutex::new(TcpStream::connect(SOCKET).unwrap())
 });
