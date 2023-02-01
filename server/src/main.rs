@@ -188,11 +188,7 @@ fn check_connections(streams: Arc<Mutex<Vec<(TcpStream, Option<User>)>>>){
                         stream.0.shutdown(std::net::Shutdown::Both).unwrap();
                         return false;
                     }
-
-                    return true;
                 }
-
-                return true;
             }
 
             true
