@@ -35,9 +35,10 @@
     border: none;
     padding: 5px 10px;
     cursor: pointer;
+    transition-duration: 0.4s;
   }
   
-  .edit-btn:hover, .reset-btn:hover, .rmv-btn:hover, .addcrt-btn:hover {
+  .edit-btn:hover, .reset-btn:hover, .rmv-btn:hover, .addcrt-btn:hover, .event-btn:hover {
     background-color: #6B3E72;
   }
   
