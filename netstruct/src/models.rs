@@ -31,6 +31,7 @@ pub struct Announcement{
     pub id: i32,
     pub title: String,
     pub description: String,
+    pub date: String,
     pub user_id: i32,
 }
 
@@ -40,6 +41,7 @@ pub struct Announcement{
 pub struct NewAnnouncement {
     pub title: String,
     pub description: String,
+    pub date: String,
     pub user_id: i32,
 }
 

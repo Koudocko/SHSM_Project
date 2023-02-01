@@ -172,12 +172,15 @@ pub fn add_announcement(payload: Value, shsm_id: i32)-> Result<bool, Box<dyn Err
 
     if let Some(announcement_title) = payload["title"].as_str(){
         if let Some(announcement_description) = payload["description"].as_str(){
-            let exists = announcements::dsl::announcements.filter(announcements::dsl::title.eq(announcement_title)).first::<Announcement>(connection).is_err();
+            let exists = announcements::dsl::announcements.filter(announcements::dsl::title.eq(announcement_title)).filter(announcements::dsl::user_id.eq(shsm_id)).first::<Announcement>(connection).is_ok();
 
             if !exists{
+                let current_date = chrono::Local::now().format("%Y-%m-%d %r");
+
                 let new_announcement = NewAnnouncement{
                     title: announcement_title.to_owned(),
                     description: announcement_description.to_owned(),
+                    date: current_date.to_string(),
                     user_id: shsm_id,
                 };
 
@@ -185,7 +188,6 @@ pub fn add_announcement(payload: Value, shsm_id: i32)-> Result<bool, Box<dyn Err
                     .values(&new_announcement)
                     .execute(connection)
                     .expect("Failed to insert announcment!");
-
             }
 
             return Ok(!exists);
@@ -228,7 +230,7 @@ pub fn add_shsm_event(payload: Value, shsm_id: i32)-> Result<bool, Box<dyn Error
             if let Some(event_date) = payload["data"].as_str(){
                 if let Some(event_certification) = payload["certification"].as_bool(){
                     if let Some(event_completed) = payload["completed"].as_bool(){
-                        let exists = events::dsl::events.filter(events::dsl::title.eq(event_title)).first::<Event>(connection).is_err();
+                        let exists = events::dsl::events.filter(events::dsl::title.eq(event_title)).first::<Event>(connection).is_ok();
 
                         if !exists{
                             let new_event = NewEvent{

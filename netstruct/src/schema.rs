@@ -5,6 +5,7 @@ diesel::table! {
         id -> Int4,
         title -> Text,
         description -> Text,
+        date -> Text,
         user_id -> Int4,
     }
 }

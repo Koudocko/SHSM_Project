@@ -8,7 +8,7 @@ use std::{
     sync::Mutex,
 };
 use netstruct::*;
-use netstruct::models::{NewUser, Announcement, Event, User};
+use netstruct::models::{NewUser, Announcement, Event};
 use ring::rand::SecureRandom;
 use ring::{digest, pbkdf2, rand};
 use std::num::NonZeroU32;
@@ -32,7 +32,7 @@ static mut IS_TEACHER: bool = false;
 struct WindowHandle(Mutex<Window>);
 
 #[tauri::command]
-fn add_event(title: String, description: String, date: String, certification: bool){
+fn add_event(title: String, description: String, date: String, certification: bool, window: State<WindowHandle>){
     write_stream(&mut *STREAM.lock().unwrap(), 
         Package { 
             header: String::from("ADD_EVENT"), 
@@ -41,6 +41,14 @@ fn add_event(title: String, description: String, date: String, certification: bo
     ).unwrap();
 
     let response = read_stream(&mut *STREAM.lock().unwrap());
+
+    if response.header == "GOOD"{
+        sync_elements(String::from("EVENTS"), window);
+    }
+    else{
+        MessageDialogBuilder::new("ERROR ENCOUNTERED", unpack(&response.payload, "error").as_str().unwrap())
+           .show(|_|{});
+    }
 }
 
 #[tauri::command]
@@ -56,6 +64,10 @@ fn add_announcement(title: String, description: String, window: State<WindowHand
 
     if response.header == "GOOD"{
         sync_elements(String::from("ANNOUNCEMENTS"), window);
+    }
+    else{
+        MessageDialogBuilder::new("ERROR ENCOUNTERED", unpack(&response.payload, "error").as_str().unwrap())
+           .show(|_|{});
     }
 }
 
@@ -188,9 +200,10 @@ fn sync_elements(page_name: String, window: State<WindowHandle>){
                         <div class='announcement'>
                             <div class='title'>{}</div>
                             <div class='description'>{}</div>
+                            <div class='date'>{}</div>
                         </div>`;
                         document.getElementById('posted-announcement-container').innerHTML += announcement;
-                    ", announcement.title, announcement.description))
+                    ", announcement.title, announcement.description, announcement.date))
                     .unwrap();
             }
         }
@@ -247,6 +260,7 @@ fn login_account(username: String, password: String, window: State<WindowHandle>
                 { "student_home.html" }
             };
 
+            // add_event(String::from("this is an event"), String::from("this is an event's description"), String::from("this is a date of an event"), true, window.clone());
             window.0.lock().unwrap()
                 .eval(&format!("window.location.replace('{page_name}');"))
                 .unwrap();
@@ -349,7 +363,7 @@ async fn main(){
             app.manage(WindowHandle(Mutex::new(app.get_window("main").unwrap())));
             Ok(())
         })
-        .invoke_handler(tauri::generate_handler![create_account, login_account, add_announcement, sync_elements])
+        .invoke_handler(tauri::generate_handler![create_account, login_account, add_announcement, sync_elements, add_event])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");
 }

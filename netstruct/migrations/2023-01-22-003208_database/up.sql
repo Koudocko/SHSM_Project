@@ -11,6 +11,7 @@ CREATE TABLE announcements (
   id SERIAL PRIMARY KEY,
   title TEXT NOT NULL,
   description TEXT NOT NULL,
+  date TEXT NOT NULL,
   user_id INT NOT NULL,
   CONSTRAINT fk_user
     FOREIGN KEY(user_id)
