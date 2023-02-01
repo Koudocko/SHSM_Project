@@ -70,17 +70,17 @@
       <div class="event">
         <h3 class="event-title">Event 1</h3>
         <p class="event-date">Date: January 15, 2022</p>
-        <button class="event-signup" id="signup-button">Sign Up</button>
+        <button class="view-signups" id="signup-button">View Signups</button>
       </div>
       <div class="event">
         <h3 class="event-title">Event 2</h3>
         <p class="event-date">Date: February 12, 2022</p>
-        <button class="event-signup" data-event-id="2">Sign Up</button>
+        <button class="view-signups" id="signup-button">View Signups</button>
       </div>
       <div class="event">
         <h3 class="event-title">Event 3</h3>
         <p class="event-date">Date: March 5, 2022</p>
-        <button class="event-signup" data-event-id="3">Sign Up</button>
+        <button class="view-signups" id="signup-button">View Signups</button>
       </div>
       <div class="event">
         <h3 class="event-title">Event 4</h3>
@@ -149,6 +149,21 @@
       </div>
     </div>
 
+    <button id="add-event-btn">Add Event</button>
+
+    <div class="modal" id="add-event-modal">
+      <div class="modal-content">
+        <span class="close-btn">&times;</span>
+        <h2>Student Events</h2>
+        <form>
+          <input type="text" placeholder="Event Name">
+          <input type="text" placeholder="Event Date">
+          <button type="submit" class="save-btn">Save</button>
+        </form>
+      </div>
+    </div>
+
+
     <form id="event-signup-form" method="post">
       <label for="name">Name:</label>
       <input type="text" id="name" name="name" />
@@ -157,44 +172,7 @@
       <input type="hidden" id="event-id" name="event-id" value="" />
       <input type="submit" value="Sign Up" />
     </form>
-
-      
-
-    <script>
-      $(function () {
-        $(document).scroll(function () {
-          var $nav = $("#mainNavbar");
-          $nav.toggleClass("scrolled", $(this).scrollTop() > $nav.height());
-        });
-        
-      });
-
-      const signupButton = document.getElementById("signup-button");
-      signupButton.addEventListener("click", function () {
-        // code to change the button text goes here
-        signupButton.textContent = "Withdraw";
-        
-      });
-      let isSignedUp = false;
-      signupButton.addEventListener("click", function () {
-        if (isSignedUp) {
-          signupButton.textContent = "Withdraw";
-          isSignedUp = false;
-        } else {
-          signupButton.textContent = "Sign Up";
-          isSignedUp = true;
-        }
-      });
-
-      signupButton.addEventListener("click", function() {
-  accepted.classList.add("animatedAccept");
-  setTimeout(function(){
-    signupButton.textContent = "Withdrawn";
-    accepted.classList.remove("animatedAccept");
-    signupButton.style.backgroundColor = "green";
-  },500);
-});
     <script src="main.js"></script>
-    </script>
+    <script src="teacher_events.js"></script>
   </body>
 </html>

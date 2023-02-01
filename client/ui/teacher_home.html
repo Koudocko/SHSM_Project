@@ -114,28 +114,29 @@
     <br>
     <input type="submit" value="Post Announcement">
 </form>
-<script>
-     document.querySelector("#post-announcement-button").addEventListener("click", function() {
-    var form = document.querySelector("#new-announcement-form");
-    if (form.style.display === "none") {
-        form.style.display = "block";
-    } else {
-        form.style.display = "none";
-    }
-});
+    <script>
+            document.querySelector("#post-announcement-button").addEventListener("click", function() {
+            var form = document.querySelector("#new-announcement-form");
+            if (form.style.display === "none") {
+                form.style.display = "block";
+            } else {
+                form.style.display = "none";
+            }
+        });
 
-document.querySelector("#new-announcement-form").addEventListener("submit", function(e) {
-    const { invoke } = window.__TAURI__.tauri 
-    e.preventDefault();
+        document.querySelector("#new-announcement-form").addEventListener("submit", function(e) {
+            const { invoke } = window.__TAURI__.tauri 
+            e.preventDefault();
 
-    var _title = document.querySelector("#title").value;
-    var _description = document.querySelector("#description").value;
+            var _title = document.querySelector("#title").value;
+            var _description = document.querySelector("#description").value;
 
-    invoke('add_announcement', { title: _title, description: _description })
-			.then(() =>{});
-});
+            invoke('add_announcement', { title: _title, description: _description })
+                    .then(() =>{});
+        });
 
-</script>
+    </script>
     <script src="main.js"></script>
+    <script src="teacher_events.js"></script>
     </body>    
 </html>
