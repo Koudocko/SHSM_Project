@@ -107,7 +107,42 @@
       <input type="hidden" id="event-id" name="event-id" value="" />
       <input type="submit" value="Sign Up" />
     </form>
-    <script src="main.js"></script>
     <script src="teacher_events.js"></script>
+    <script>
+      $(function () {
+        $(document).scroll(function () {
+          var $nav = $("#mainNavbar");
+          $nav.toggleClass("scrolled", $(this).scrollTop() > $nav.height());
+        });
+        
+      });
+
+      const signupButton = document.getElementById("signup-button");
+      signupButton.addEventListener("click", function () {
+        // code to change the button text goes here
+        signupButton.textContent = "Withdraw";
+        
+      });
+      let isSignedUp = false;
+      signupButton.addEventListener("click", function () {
+        if (isSignedUp) {
+          signupButton.textContent = "Withdraw";
+          isSignedUp = false;
+        } else {
+          signupButton.textContent = "Sign Up";
+          isSignedUp = true;
+        }
+      });
+
+      signupButton.addEventListener("click", function() {
+  accepted.classList.add("animatedAccept");
+  setTimeout(function(){
+    signupButton.textContent = "Withdrawn";
+    accepted.classList.remove("animatedAccept");
+    signupButton.style.backgroundColor = "green";
+  },500);
+});
+    </script>
+    <script src="main.js"></script>
   </body>
 </html>
