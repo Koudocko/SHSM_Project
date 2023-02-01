@@ -3,7 +3,6 @@
   windows_subsystem = "windows"
 )]
 
-use std::thread;
 use std::{
     net::TcpStream,
     sync::Mutex,
@@ -20,9 +19,9 @@ use tauri::{
     Window,
     Manager
 };
-use serde_json::{json, Value};
+use serde_json::json;
 
-static mut CURRENT_PAGE: Page = Page::Login;
+static mut CURRENT_PAGE: String = String::new();
 // const SOCKET: &str = "als-kou.ddns.net:7878";
 const SOCKET: &str = "127.0.0.1:7878";
 static STREAM: Lazy<Mutex<TcpStream>> = Lazy::new(||{
@@ -56,52 +55,52 @@ fn add_announcement(title: String, description: String, window: State<WindowHand
     let response = read_stream(&mut *STREAM.lock().unwrap());
 
     if response.header == "GOOD"{
-        sync_elements(window);
+        sync_elements(String::from("ANNOUNCEMENTS"), window);
     }
 }
 
 #[tauri::command]
-fn sync_elements(window: State<WindowHandle>){
-    match unsafe{ CURRENT_PAGE.clone() }{
-        Page::Certifications =>{
-            write_stream(&mut *STREAM.lock().unwrap(), 
-                Package { 
-                    header: String::from("GET_CERTIFICATIONS"), 
-                    payload: String::new()
-                }
-            ).unwrap();
+fn sync_elements(page_name: String, window: State<WindowHandle>){
+    unsafe{ CURRENT_PAGE = page_name.to_owned(); }
 
-            let response = read_stream(&mut *STREAM.lock().unwrap());
+    println!("{page_name}");
+    match page_name.as_str(){
+        "CERTIFICATIONS" =>{
+            // write_stream(&mut *STREAM.lock().unwrap(), 
+            //     Package { 
+            //         header: String::from("GET_CERTIFICATIONS"), 
+            //         payload: String::new()
+            //     }
+            // ).unwrap();
 
-            // window.0.lock().unwrap()
-            //     .eval("document.getElementById('posted-announcement-container').innerHTML = '';")
-                // .unwrap();
+            // let response = read_stream(&mut *STREAM.lock().unwrap());
 
-            for certification in unpack(&response.payload, "certifications").as_array().unwrap(){
-                let certification: Event = serde_json::from_value(certification.clone()).unwrap();
+            // // window.0.lock().unwrap()
+            // //     .eval("document.getElementById('posted-announcement-container').innerHTML = '';")
+            //     // .unwrap();
+
+            // for certification in unpack(&response.payload, "certifications").as_array().unwrap(){
+            //     let certification: Event = serde_json::from_value(certification.clone()).unwrap();
                 
-                // window.0.lock().unwrap()
-                //     .eval(&format!("
-                //         var announcement = `
-                //         <div class='announcement'>
-                //             <div class='title'>{}</div>
-                //             <div class='description'>{}</div>
-                //         </div>`;
-                //         document.getElementById('posted-announcement-container').innerHTML += announcement;
-                //     ", announcement.title, announcement.description))
-                //     .unwrap();
-            }
+            //     // window.0.lock().unwrap()
+            //     //     .eval(&format!("
+            //     //         var announcement = `
+            //     //         <div class='announcement'>
+            //     //             <div class='title'>{}</div>
+            //     //             <div class='description'>{}</div>
+            //     //         </div>`;
+            //     //         document.getElementById('posted-announcement-container').innerHTML += announcement;
+            //     //     ", announcement.title, announcement.description))
+            //     //     .unwrap();
+            // }
         }
-        Page::ShsmSelection =>{
+        "EVENTS" =>{
 
         }
-        Page::Events =>{
+        "CLASSLIST" =>{
 
         }
-        Page::Login =>{
-
-        }
-        Page::Home =>{
+        "ANNOUNCEMENTS" =>{
             write_stream(&mut *STREAM.lock().unwrap(), 
                 Package { 
                     header: String::from("GET_ANNOUNCEMENTS"), 
@@ -130,6 +129,7 @@ fn sync_elements(window: State<WindowHandle>){
                     .unwrap();
             }
         }
+        _ =>(),
     }
 }
 
@@ -173,7 +173,7 @@ fn login_account(username: String, password: String, window: State<WindowHandle>
         let response = read_stream(&mut *STREAM.lock().unwrap());
         if response.header == "GOOD"{
             let page_name = unsafe{ 
-                CURRENT_PAGE = Page::Home; 
+                CURRENT_PAGE = String::from("ANNOUNCEMENTS");
                 IS_TEACHER = unpack(&response.payload, "is_teacher").as_bool().unwrap();
 
                 if IS_TEACHER

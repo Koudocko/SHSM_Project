@@ -15,15 +15,6 @@ use std::fmt;
 pub mod schema;
 pub mod models;
 
-#[derive(Clone)]
-pub enum Page{
-    Certifications, 
-    ShsmSelection,
-    Events,
-    Login,
-    Home
-}
-
 #[derive(Serialize, Deserialize, Debug)]
 pub struct Package{
     pub header: String,
@@ -307,6 +298,29 @@ pub fn remove_user_event(payload: Value, user_id: i32)-> Result<(), Box<dyn Erro
             .execute(connection)?;
 
         return Ok(());
+    }
+
+    Err(Box::new(PlainError::new()))
+}
+
+
+pub fn certify_user(payload: Value)-> Result<(), Box<dyn Error>>{
+    let connection = &mut establish_connection();
+
+    if let Some(event_title) = payload["title"].as_str(){
+        if let Some(event_completed) = payload["completed"].as_bool(){
+            if let Some(user_username) = payload["username"].as_str(){
+                let user = users::dsl::users.filter(users::dsl::username.eq(user_username))
+                    .first::<User>(connection)
+                    .unwrap();
+
+                diesel::update(events::dsl::events.filter(events::dsl::title.eq(event_title)).filter(events::dsl::user_id.eq(user.id)))
+                    .set(events::dsl::completed.eq(event_completed))
+                    .execute(connection)?;
+
+                return Ok(());
+            }
+        }
     }
 
     Err(Box::new(PlainError::new()))
