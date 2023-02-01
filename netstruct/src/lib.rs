@@ -175,7 +175,7 @@ pub fn add_announcement(payload: Value, shsm_id: i32)-> Result<bool, Box<dyn Err
             let exists = announcements::dsl::announcements.filter(announcements::dsl::title.eq(announcement_title)).filter(announcements::dsl::user_id.eq(shsm_id)).first::<Announcement>(connection).is_ok();
 
             if !exists{
-                let current_date = chrono::Local::now().format("%Y-%m-%d %r");
+                let current_date = chrono::Local::now().format("%F %r");
 
                 let new_announcement = NewAnnouncement{
                     title: announcement_title.to_owned(),
@@ -408,31 +408,6 @@ pub fn update_user(payload: Value, course_code: &str)-> Result<(), Box<dyn Error
 
                     return Ok(());
                 }
-            }
-        }
-    }
-
-    Err(Box::new(PlainError::new()))
-}
-
-pub fn update_announcement(payload: Value, shsm_id: i32)-> Result<(), Box<dyn Error>>{
-    let connection = &mut establish_connection();
-
-    if let Some(announcement_title) = payload["title"].as_str(){
-        if let Some(new_announcement_title) = payload["new_title"].as_str(){
-            if let Some(new_announcement_description) = payload["new_description"].as_str(){
-                let announcement = announcements::dsl::announcements.filter(announcements::dsl::title.eq(announcement_title))
-                    .filter(announcements::dsl::user_id.eq(shsm_id))
-                    .first::<Announcement>(connection)?;
-
-                diesel::update(&announcement)
-                    .set(announcements::dsl::title.eq(new_announcement_title))
-                    .execute(connection)?;
-                diesel::update(&announcement)
-                    .set(announcements::dsl::description.eq(new_announcement_description))
-                    .execute(connection)?;
-
-                return Ok(());
             }
         }
     }

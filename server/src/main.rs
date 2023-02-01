@@ -208,20 +208,6 @@ fn handle_connection(stream: &mut (TcpStream, Option<User>))-> Result<(), Box<dy
                return Err(Box::new(PlainError::new()));
             }
         }
-        "UPDATE_ANNOUNCEMENT" =>{
-            if let Some(user) = &stream.1{
-                if user.teacher{
-                    update_announcement(serde_json::from_str::<Value>(&request.payload)?, user.id)?;
-                    String::new()
-                }
-                else{
-                   return Err(Box::new(PlainError::new()));
-                }
-            }
-            else{
-               return Err(Box::new(PlainError::new()));
-            }
-        }
         "UPDATE_EVENT" =>{
             if let Some(user) = &stream.1{
                 if user.teacher{
