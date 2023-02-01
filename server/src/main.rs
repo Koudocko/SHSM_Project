@@ -176,10 +176,80 @@ fn handle_connection(stream: &mut (TcpStream, Option<User>))-> Result<(), Box<dy
                return Err(Box::new(PlainError::new()));
             }
         }
-        "DELETE_USER" =>{
+        "REMOVE_USER" =>{
             if let Some(user) = &stream.1{
                 if user.teacher{
-                    delete_user(serde_json::from_str::<Value>(&request.payload)?, &user.code)?;
+                    remove_user(serde_json::from_str::<Value>(&request.payload)?, &user.code)?;
+                    String::new()
+                }
+                else{
+                   return Err(Box::new(PlainError::new()));
+                }
+            }
+            else{
+               return Err(Box::new(PlainError::new()));
+            }
+        }
+        "UPDATE_USER" =>{
+            if let Some(user) = &stream.1{
+                if user.teacher{
+                    update_user(serde_json::from_str::<Value>(&request.payload)?, &user.code)?;
+                    String::new()
+                }
+                else{
+                   return Err(Box::new(PlainError::new()));
+                }
+            }
+            else{
+               return Err(Box::new(PlainError::new()));
+            }
+        }
+        "UPDATE_ANNOUNCEMENT" =>{
+            if let Some(user) = &stream.1{
+                if user.teacher{
+                    update_announcement(serde_json::from_str::<Value>(&request.payload)?, user.id)?;
+                    String::new()
+                }
+                else{
+                   return Err(Box::new(PlainError::new()));
+                }
+            }
+            else{
+               return Err(Box::new(PlainError::new()));
+            }
+        }
+        "UPDATE_EVENT" =>{
+            if let Some(user) = &stream.1{
+                if user.teacher{
+                    update_event(serde_json::from_str::<Value>(&request.payload)?, user.id)?;
+                    String::new()
+                }
+                else{
+                   return Err(Box::new(PlainError::new()));
+                }
+            }
+            else{
+               return Err(Box::new(PlainError::new()));
+            }
+        }
+        "REMOVE_EVENT" =>{
+            if let Some(user) = &stream.1{
+                if user.teacher{
+                    remove_event(serde_json::from_str::<Value>(&request.payload)?, user.id)?;
+                    String::new()
+                }
+                else{
+                   return Err(Box::new(PlainError::new()));
+                }
+            }
+            else{
+               return Err(Box::new(PlainError::new()));
+            }
+        }
+        "REMOVE_ANNOUNCEMENT" =>{
+            if let Some(user) = &stream.1{
+                if user.teacher{
+                    remove_announcement(serde_json::from_str::<Value>(&request.payload)?, user.id)?;
                     String::new()
                 }
                 else{

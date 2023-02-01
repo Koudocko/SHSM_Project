@@ -353,7 +353,7 @@ pub fn get_event_users(payload: Value, class_code: &str)-> Result<Vec<String>, B
     Err(Box::new(PlainError::new()))
 }
 
-pub fn delete_user(payload: Value, course_code: &str)-> Result<(), Box<dyn Error>>{
+pub fn remove_user(payload: Value, course_code: &str)-> Result<(), Box<dyn Error>>{
     let connection = &mut establish_connection();
 
     if let Some(user_username) = payload["username"].as_str(){
@@ -362,6 +362,139 @@ pub fn delete_user(payload: Value, course_code: &str)-> Result<(), Box<dyn Error
             .first::<User>(connection)?;
 
         diesel::delete(&user)
+            .execute(connection)?;
+
+        return Ok(());
+    }
+
+    Err(Box::new(PlainError::new()))
+}
+
+pub fn update_user(payload: Value, course_code: &str)-> Result<(), Box<dyn Error>>{
+    let connection = &mut establish_connection();
+
+    if let Some(user_username) = payload["username"].as_str(){
+        if let Some(new_user_username) = payload["new_username"].as_str(){
+            if let Some(new_user_hash) = payload["new_hash"].as_array(){
+                let new_user_hash = new_user_hash.into_iter()
+                    .map(|byte| u8::try_from(byte.as_u64().unwrap()).unwrap())
+                    .collect::<Vec<u8>>();
+
+                if let Some(new_user_salt) = payload["new_salt"].as_array(){
+                    let new_user_salt = new_user_salt.into_iter()
+                        .map(|byte| u8::try_from(byte.as_u64().unwrap()).unwrap())
+                        .collect::<Vec<u8>>();
+
+                    let user = users::dsl::users.filter(users::dsl::username.eq(user_username))
+                        .filter(users::dsl::code.eq(course_code))
+                        .filter(users::dsl::teacher.eq(false))
+                        .first::<User>(connection)?;
+
+                    diesel::update(&user)
+                        .set(users::dsl::username.eq(new_user_username))
+                        .execute(connection)?;
+                    diesel::update(&user)
+                        .set(users::dsl::hash.eq(new_user_hash))
+                        .execute(connection)?;
+                    diesel::update(&user)
+                        .set(users::dsl::salt.eq(new_user_salt))
+                        .execute(connection)?;
+
+                    return Ok(());
+                }
+            }
+        }
+    }
+
+    Err(Box::new(PlainError::new()))
+}
+
+pub fn update_announcement(payload: Value, shsm_id: i32)-> Result<(), Box<dyn Error>>{
+    let connection = &mut establish_connection();
+
+    if let Some(announcement_title) = payload["title"].as_str(){
+        if let Some(new_announcement_title) = payload["new_title"].as_str(){
+            if let Some(new_announcement_description) = payload["new_description"].as_str(){
+                let announcement = announcements::dsl::announcements.filter(announcements::dsl::title.eq(announcement_title))
+                    .filter(announcements::dsl::user_id.eq(shsm_id))
+                    .first::<Announcement>(connection)?;
+
+                diesel::update(&announcement)
+                    .set(announcements::dsl::title.eq(new_announcement_title))
+                    .execute(connection)?;
+                diesel::update(&announcement)
+                    .set(announcements::dsl::description.eq(new_announcement_description))
+                    .execute(connection)?;
+
+                return Ok(());
+            }
+        }
+    }
+
+    Err(Box::new(PlainError::new()))
+}
+
+pub fn update_event(payload: Value, shsm_id: i32)-> Result<(), Box<dyn Error>>{
+    let connection = &mut establish_connection();
+
+    if let Some(event_title) = payload["title"].as_str(){
+        if let Some(new_event_title) = payload["new_title"].as_str(){
+            if let Some(new_event_description) = payload["new_description"].as_str(){
+                if let Some(new_event_date) = payload["new_date"].as_str(){
+                    if let Some(new_event_certification) = payload["new_certification"].as_str(){
+                        let event = events::dsl::events.filter(events::dsl::title.eq(event_title))
+                            .filter(events::dsl::user_id.eq(shsm_id))
+                            .first::<Event>(connection)?;
+
+                        diesel::update(&event)
+                            .set(events::dsl::title.eq(new_event_title))
+                            .execute(connection)?;
+                        diesel::update(&event)
+                            .set(events::dsl::description.eq(new_event_description))
+                            .execute(connection)?;
+                        diesel::update(&event)
+                            .set(events::dsl::date.eq(new_event_date))
+                            .execute(connection)?;
+                        diesel::update(&event)
+                            .set(events::dsl::date.eq(new_event_certification))
+                            .execute(connection)?;
+
+                        return Ok(());
+                    }
+                }
+            }
+        }
+    }
+
+    Err(Box::new(PlainError::new()))
+}
+
+pub fn remove_event(payload: Value, shsm_id: i32)-> Result<(), Box<dyn Error>>{
+    let connection = &mut establish_connection();
+
+    if let Some(event_title) = payload["title"].as_str(){
+        let event = events::dsl::events.filter(events::dsl::title.eq(event_title))
+            .filter(events::dsl::user_id.eq(shsm_id))
+            .first::<Event>(connection)?;
+
+        diesel::delete(&event)
+            .execute(connection)?;
+
+        return Ok(());
+    }
+
+    Err(Box::new(PlainError::new()))
+}
+
+pub fn remove_announcement(payload: Value, shsm_id: i32)-> Result<(), Box<dyn Error>>{
+    let connection = &mut establish_connection();
+
+    if let Some(announcement_title) = payload["title"].as_str(){
+        let announcement = announcements::dsl::announcements.filter(announcements::dsl::title.eq(announcement_title))
+            .filter(announcements::dsl::user_id.eq(shsm_id))
+            .first::<Announcement>(connection)?;
+
+        diesel::delete(&announcement)
             .execute(connection)?;
 
         return Ok(());
