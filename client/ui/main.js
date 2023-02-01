@@ -1,7 +1,7 @@
-function sync_elements(){
+function sync_elements(_page_name){
     const { invoke } = window.__TAURI__.tauri 
 
-    invoke('sync_elements')
+    invoke('sync_elements', { pageName: _page_name })
 			.then(() =>{});
 }
 
