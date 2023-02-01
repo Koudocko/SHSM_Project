@@ -227,7 +227,7 @@ pub fn add_shsm_event(payload: Value, shsm_id: i32)-> Result<bool, Box<dyn Error
 
     if let Some(event_title) = payload["title"].as_str(){
         if let Some(event_description) = payload["description"].as_str(){
-            if let Some(event_date) = payload["data"].as_str(){
+            if let Some(event_date) = payload["date"].as_str(){
                 if let Some(event_certification) = payload["certification"].as_bool(){
                     if let Some(event_completed) = payload["completed"].as_bool(){
                         let exists = events::dsl::events.filter(events::dsl::title.eq(event_title)).first::<Event>(connection).is_ok();
@@ -241,6 +241,7 @@ pub fn add_shsm_event(payload: Value, shsm_id: i32)-> Result<bool, Box<dyn Error
                                 completed: event_completed,
                                 user_id: shsm_id
                             };
+                            println!("Adding event: {new_event:?}");
 
                             diesel::insert_into(schema::events::table)
                                 .values(&new_event)

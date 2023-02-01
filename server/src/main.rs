@@ -13,7 +13,7 @@ const SOCKET: &str = "127.0.0.1:7878";
 fn handle_connection(stream: &mut (TcpStream, Option<User>))-> Result<(), Box<dyn Error>> {
     stream.0.set_nonblocking(false).unwrap();
     let request = read_stream(&mut stream.0);
-    println!("REQUEST - verified: {:?}, payload: {request:?}", stream.1.is_some());
+    println!("INCOMING REQUEST\nVerified: {:?}\nHeader: {}\nPayload: {:?}", stream.1.is_some(), request.header, request.payload);
 
     let mut header = String::from("GOOD");
     let payload = match request.header.as_str(){
@@ -129,11 +129,11 @@ fn handle_connection(stream: &mut (TcpStream, Option<User>))-> Result<(), Box<dy
                     }
                 }
                 else{
-                   return Err(Box::new(PlainError::new()));
+                    return Err(Box::new(PlainError::new()));
                 }
             }
             else{
-               return Err(Box::new(PlainError::new()));
+                return Err(Box::new(PlainError::new()));
             }
         }
         "ADD_USER_EVENT" =>{

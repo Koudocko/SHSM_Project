@@ -35,8 +35,8 @@ struct WindowHandle(Mutex<Window>);
 fn add_event(title: String, description: String, date: String, certification: bool, window: State<WindowHandle>){
     write_stream(&mut *STREAM.lock().unwrap(), 
         Package { 
-            header: String::from("ADD_EVENT"), 
-            payload: json!({ "title": title, "description": description, "date": date, "certification": certification }).to_string()
+            header: String::from("ADD_SHSM_EVENT"), 
+            payload: json!({ "title": title, "description": description, "date": date, "certification": certification, "completed": false }).to_string()
         }
     ).unwrap();
 
@@ -269,7 +269,6 @@ fn login_account(username: String, password: String, window: State<WindowHandle>
                 { "student_home.html" }
             };
 
-            add_event(String::from("this is an event"), String::from("this is an event's description"), String::from("this is a date of an event"), true, window.clone());
             window.0.lock().unwrap()
                 .eval(&format!("window.location.replace('{page_name}');"))
                 .unwrap();
