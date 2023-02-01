@@ -22,14 +22,46 @@ use tauri::{
 use serde_json::json;
 
 static mut CURRENT_PAGE: String = String::new();
-const SOCKET: &str = "als-kou.ddns.net:7878";
-//const SOCKET: &str = "127.0.0.1:7878";
+// const SOCKET: &str = "als-kou.ddns.net:7878";
+const SOCKET: &str = "127.0.0.1:7878";
 static STREAM: Lazy<Mutex<TcpStream>> = Lazy::new(||{
     Mutex::new(TcpStream::connect(SOCKET).unwrap())
 });
 static mut IS_TEACHER: bool = false; 
 
 struct WindowHandle(Mutex<Window>);
+
+#[tauri::command]
+fn update_user(username: String, new_username: String, new_password: String, window: State<WindowHandle>){
+    const CREDENTIAL_LEN: usize = digest::SHA512_OUTPUT_LEN;
+    let n_iter = NonZeroU32::new(100_000).unwrap();
+    let rng = rand::SystemRandom::new();
+
+    let mut salt_key = [0u8; CREDENTIAL_LEN];
+    let mut pbkdf2_hash = [0u8; CREDENTIAL_LEN];
+
+    if !new_password.is_empty(){
+        rng.fill(&mut salt_key).unwrap();
+
+        pbkdf2::derive(
+            pbkdf2::PBKDF2_HMAC_SHA512,
+            n_iter,
+            &salt_key,
+            new_password.as_bytes(),
+            &mut pbkdf2_hash,
+        );
+    }
+
+    write_stream(&mut *STREAM.lock().unwrap(), 
+        Package { 
+            header: String::from("UPDATE_USER"), 
+            payload: json!({ "username": username, "new_username": new_username, "new_hash": pbkdf2_hash.to_vec(), "new_salt": salt_key.to_vec() }).to_string()
+        }
+    ).unwrap();
+
+    read_stream(&mut *STREAM.lock().unwrap());
+    sync_elements(String::from("CLASSLIST"), window);
+}
 
 #[tauri::command]
 fn remove_user(username: String, window: State<WindowHandle>){
@@ -40,7 +72,7 @@ fn remove_user(username: String, window: State<WindowHandle>){
         }
     ).unwrap();
 
-    let _ = read_stream(&mut *STREAM.lock().unwrap());
+    read_stream(&mut *STREAM.lock().unwrap());
     sync_elements(String::from("CLASSLIST"), window);
 }
 
@@ -394,7 +426,7 @@ async fn main(){
             app.manage(WindowHandle(Mutex::new(app.get_window("main").unwrap())));
             Ok(())
         })
-        .invoke_handler(tauri::generate_handler![create_account, login_account, add_announcement, sync_elements, add_event, remove_user])
+        .invoke_handler(tauri::generate_handler![create_account, login_account, add_announcement, sync_elements, add_event, remove_user, update_user])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");
 }

@@ -410,15 +410,19 @@ pub fn update_user(payload: Value, course_code: &str)-> Result<(), Box<dyn Error
                         .filter(users::dsl::teacher.eq(false))
                         .first::<User>(connection)?;
 
-                    diesel::update(&user)
-                        .set(users::dsl::username.eq(new_user_username))
-                        .execute(connection)?;
-                    diesel::update(&user)
-                        .set(users::dsl::hash.eq(new_user_hash))
-                        .execute(connection)?;
-                    diesel::update(&user)
-                        .set(users::dsl::salt.eq(new_user_salt))
-                        .execute(connection)?;
+                    if !new_user_username.is_empty(){
+                        diesel::update(&user)
+                            .set(users::dsl::username.eq(new_user_username))
+                            .execute(connection)?;
+                    }
+                    if new_user_hash.iter().any(|byte| *byte != 0){
+                        diesel::update(&user)
+                            .set(users::dsl::hash.eq(new_user_hash))
+                            .execute(connection)?;
+                        diesel::update(&user)
+                            .set(users::dsl::salt.eq(new_user_salt))
+                            .execute(connection)?;
+                    }
 
                     return Ok(());
                 }
