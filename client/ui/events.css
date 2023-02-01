@@ -64,7 +64,7 @@ h1 {
     color: #8F4B96;
 }
 
-.event-signup {
+.event-signup, .view-signups, #add-event-btn {
     background-color: #8F4B96;
     color: white;
     border: none;
@@ -78,7 +78,7 @@ h1 {
     transition-duration: 0.4s;
 }
 
-.event-signup:hover {
+.event-signup:hover, .view-signups:hover, #add-event-btn:hover {
     background-color: #ccb4dc;
 }
 
