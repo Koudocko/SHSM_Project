@@ -32,6 +32,19 @@ static mut IS_TEACHER: bool = false;
 struct WindowHandle(Mutex<Window>);
 
 #[tauri::command]
+fn remove_user(username: String, window: State<WindowHandle>){
+    write_stream(&mut *STREAM.lock().unwrap(), 
+        Package { 
+            header: String::from("REMOVE_USER"), 
+            payload: json!({ "username": username }).to_string()
+        }
+    ).unwrap();
+
+    let _ = read_stream(&mut *STREAM.lock().unwrap());
+    sync_elements(String::from("CLASSLIST"), window);
+}
+
+#[tauri::command]
 fn add_event(title: String, description: String, date: String, certification: bool, window: State<WindowHandle>){
     write_stream(&mut *STREAM.lock().unwrap(), 
         Package { 
@@ -160,9 +173,15 @@ fn sync_elements(page_name: String, window: State<WindowHandle>){
 
             let response = read_stream(&mut *STREAM.lock().unwrap());
 
-            // window.0.lock().unwrap()
-            //     .eval("document.getElementById('posted-announcement-container').innerHTML = '';")
-                // .unwrap();
+            window.0.lock().unwrap()
+                .eval("
+                    document.getElementById('students-container').innerHTML = `
+                      <tr>
+                        <th>Username</th>
+                        <th>Actions</th>
+                      </tr>`;
+                ")
+                .unwrap();
 
             if let Some(users) = unpack(&response.payload, "class_list").as_array(){
                 for user in users{
@@ -171,16 +190,20 @@ fn sync_elements(page_name: String, window: State<WindowHandle>){
                     println!("USER:");
                     println!("User Username: {}", username);
                     
-                //     // window.0.lock().unwrap()
-                //     //     .eval(&format!("
-                //     //         var announcement = `
-                //     //         <div class='announcement'>
-                //     //             <div class='title'>{}</div>
-                //     //             <div class='description'>{}</div>
-                //     //         </div>`;
-                //     //         document.getElementById('posted-announcement-container').innerHTML += announcement;
-                //     //     ", announcement.title, announcement.description))
-                //     //     .unwrap();
+                    window.0.lock().unwrap()
+                        .eval(&format!("
+                            var user = `
+                              <tr>
+                                <td class='username1'>{username}</td>
+                                <td>
+                                  <button class='edit-btn'>edit</button>
+                                  <button class='addcrt-btn'>add certification</button>
+                                  <button class='rmv-btn'>remove</button>
+                                </td>
+                              </tr>`;
+                            document.getElementById('students-container').innerHTML += user;
+                        "))
+                        .unwrap();
                 }
             }
         }
@@ -371,7 +394,7 @@ async fn main(){
             app.manage(WindowHandle(Mutex::new(app.get_window("main").unwrap())));
             Ok(())
         })
-        .invoke_handler(tauri::generate_handler![create_account, login_account, add_announcement, sync_elements, add_event])
+        .invoke_handler(tauri::generate_handler![create_account, login_account, add_announcement, sync_elements, add_event, remove_user])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");
 }

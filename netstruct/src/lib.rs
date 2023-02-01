@@ -368,6 +368,19 @@ pub fn remove_user(payload: Value, course_code: &str)-> Result<(), Box<dyn Error
             .filter(users::dsl::code.eq(course_code))
             .first::<User>(connection)?;
 
+        let results: Vec<_> = Event::belonging_to(&user)
+            .load::<Event>(connection)?
+            .into_iter()
+            .map(|event|{
+                diesel::delete(&event)
+                    .execute(connection)
+            })
+            .collect();
+
+        for result in results{
+            result?;
+        }
+
         diesel::delete(&user)
             .execute(connection)?;
 
