@@ -167,23 +167,28 @@ pub fn get_announcements(class_code: &str)-> Vec<Announcement>{
         .expect("Error loading announcements")
 }
 
-pub fn add_announcement(payload: Value, shsm_id: i32)-> Result<(), Box<dyn Error>>{
+pub fn add_announcement(payload: Value, shsm_id: i32)-> Result<bool, Box<dyn Error>>{
     let connection = &mut establish_connection();
 
     if let Some(announcement_title) = payload["title"].as_str(){
         if let Some(announcement_description) = payload["description"].as_str(){
-            let new_announcement = NewAnnouncement{
-                title: announcement_title.to_owned(),
-                description: announcement_description.to_owned(),
-                user_id: shsm_id,
-            };
+            let exists = announcements::dsl::announcements.filter(announcements::dsl::title.eq(announcement_title)).first::<Announcement>(connection).is_err();
 
-            diesel::insert_into(schema::announcements::table)
-                .values(&new_announcement)
-                .execute(connection)
-                .expect("Failed to insert announcment!");
+            if !exists{
+                let new_announcement = NewAnnouncement{
+                    title: announcement_title.to_owned(),
+                    description: announcement_description.to_owned(),
+                    user_id: shsm_id,
+                };
 
-            return Ok(());
+                diesel::insert_into(schema::announcements::table)
+                    .values(&new_announcement)
+                    .execute(connection)
+                    .expect("Failed to insert announcment!");
+
+            }
+
+            return Ok(!exists);
         }
     }
 
@@ -214,7 +219,6 @@ pub fn get_user_events(name: &str)-> Vec<Event>{
         .load::<Event>(connection)
         .expect("Error loading certifications!")
 }
-
 
 pub fn add_shsm_event(payload: Value, shsm_id: i32)-> Result<bool, Box<dyn Error>>{
     let connection = &mut establish_connection();
@@ -501,4 +505,16 @@ pub fn remove_announcement(payload: Value, shsm_id: i32)-> Result<(), Box<dyn Er
     }
 
     Err(Box::new(PlainError::new()))
+}
+
+pub fn get_class_list(course_code: &str)-> Result<Vec<String>, Box<dyn Error>>{
+    let connection = &mut establish_connection();
+
+    let users: Vec<User> = users::dsl::users.filter(users::dsl::teacher.eq(false))
+        .filter(users::dsl::code.eq(course_code))
+        .get_results(connection)?;
+
+    Ok(users.into_iter()
+        .map(|user| user.username)
+        .collect())
 }

@@ -8,7 +8,7 @@ use std::{
     sync::Mutex,
 };
 use netstruct::*;
-use netstruct::models::{NewUser, Announcement, Event};
+use netstruct::models::{NewUser, Announcement, Event, User};
 use ring::rand::SecureRandom;
 use ring::{digest, pbkdf2, rand};
 use std::num::NonZeroU32;
@@ -63,24 +63,63 @@ fn add_announcement(title: String, description: String, window: State<WindowHand
 fn sync_elements(page_name: String, window: State<WindowHandle>){
     unsafe{ CURRENT_PAGE = page_name.to_owned(); }
 
-    println!("{page_name}");
     match page_name.as_str(){
         "CERTIFICATIONS" =>{
-            // write_stream(&mut *STREAM.lock().unwrap(), 
-            //     Package { 
-            //         header: String::from("GET_CERTIFICATIONS"), 
-            //         payload: String::new()
-            //     }
-            // ).unwrap();
+            write_stream(&mut *STREAM.lock().unwrap(), 
+                Package { 
+                    header: String::from("GET_USER_EVENTS"), 
+                    payload: String::new()
+                }
+            ).unwrap();
 
-            // let response = read_stream(&mut *STREAM.lock().unwrap());
+            let response = read_stream(&mut *STREAM.lock().unwrap());
 
             // // window.0.lock().unwrap()
             // //     .eval("document.getElementById('posted-announcement-container').innerHTML = '';")
             //     // .unwrap();
 
-            // for certification in unpack(&response.payload, "certifications").as_array().unwrap(){
-            //     let certification: Event = serde_json::from_value(certification.clone()).unwrap();
+            for certification in unpack(&response.payload, "certifications").as_array().unwrap(){
+                let certification: Event = serde_json::from_value(certification.clone()).unwrap();
+                
+                println!("CERTIFICATION:");
+                println!("Certification Title: {}", certification.title);
+                println!("Certification Description: {}", certification.description);
+                println!("Certification Date: {}", certification.date);
+                println!("Certification Completed: {}", certification.completed);
+            //     // window.0.lock().unwrap()
+            //     //     .eval(&format!("
+            //     //         var announcement = `
+            //     //         <div class='announcement'>
+            //     //             <div class='title'>{}</div>
+            //     //             <div class='description'>{}</div>
+            //     //         </div>`;
+            //     //         document.getElementById('posted-announcement-container').innerHTML += announcement;
+            //     //     ", announcement.title, announcement.description))
+            //     //     .unwrap();
+            }
+        }
+        "EVENTS" =>{
+            write_stream(&mut *STREAM.lock().unwrap(), 
+                Package { 
+                    header: String::from("GET_SHSM_EVENTS"), 
+                    payload: String::new()
+                }
+            ).unwrap();
+
+            let response = read_stream(&mut *STREAM.lock().unwrap());
+
+            // window.0.lock().unwrap()
+            //     .eval("document.getElementById('posted-announcement-container').innerHTML = '';")
+                // .unwrap();
+
+            for event in unpack(&response.payload, "events").as_array().unwrap(){
+                let event: Event = serde_json::from_value(event.clone()).unwrap();
+
+                println!("EVENT:");
+                println!("Event Title: {}", event.title);
+                println!("Event Description: {}", event.description);
+                println!("Event Date: {}", event.date);
+                println!("Event Certification: {}", event.certification);
                 
             //     // window.0.lock().unwrap()
             //     //     .eval(&format!("
@@ -92,13 +131,39 @@ fn sync_elements(page_name: String, window: State<WindowHandle>){
             //     //         document.getElementById('posted-announcement-container').innerHTML += announcement;
             //     //     ", announcement.title, announcement.description))
             //     //     .unwrap();
-            // }
-        }
-        "EVENTS" =>{
-
+            }
         }
         "CLASSLIST" =>{
+            write_stream(&mut *STREAM.lock().unwrap(), 
+                Package { 
+                    header: String::from("GET_CLASS_LIST"), 
+                    payload: String::new()
+                }
+            ).unwrap();
 
+            let response = read_stream(&mut *STREAM.lock().unwrap());
+
+            // window.0.lock().unwrap()
+            //     .eval("document.getElementById('posted-announcement-container').innerHTML = '';")
+                // .unwrap();
+
+            for user in unpack(&response.payload, "class_list").as_array().unwrap(){
+                let username: String = serde_json::from_value(user.clone()).unwrap();
+
+                println!("USER:");
+                println!("User Username: {}", username);
+                
+            //     // window.0.lock().unwrap()
+            //     //     .eval(&format!("
+            //     //         var announcement = `
+            //     //         <div class='announcement'>
+            //     //             <div class='title'>{}</div>
+            //     //             <div class='description'>{}</div>
+            //     //         </div>`;
+            //     //         document.getElementById('posted-announcement-container').innerHTML += announcement;
+            //     //     ", announcement.title, announcement.description))
+            //     //     .unwrap();
+            }
         }
         "ANNOUNCEMENTS" =>{
             write_stream(&mut *STREAM.lock().unwrap(), 

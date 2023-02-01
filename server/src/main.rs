@@ -84,8 +84,13 @@ fn handle_connection(stream: &mut (TcpStream, Option<User>))-> Result<(), Box<dy
         "ADD_ANNOUNCEMENT" =>{
             if let Some(user) = &stream.1{
                 if user.teacher{
-                    add_announcement(serde_json::from_str::<Value>(&request.payload)?, user.id)?;
-                    String::new()
+                    if add_announcement(serde_json::from_str::<Value>(&request.payload)?, user.id)?{
+                        String::new()
+                    }
+                    else{
+                        header = String::from("BAD");
+                        json!({ "error": "Announcement title already exists! Please change to continue..." }).to_string()
+                    }
                 }
                 else{
                    return Err(Box::new(PlainError::new()));
@@ -119,7 +124,7 @@ fn handle_connection(stream: &mut (TcpStream, Option<User>))-> Result<(), Box<dy
                     }
                     else{
                         header = String::from("BAD");
-                        json!({ "error": "Username does not exist! Please enter a valid username..." }).to_string()
+                        json!({ "error": "Event title already exists! Please change to continue..." }).to_string()
                     }
                 }
                 else{
@@ -165,8 +170,7 @@ fn handle_connection(stream: &mut (TcpStream, Option<User>))-> Result<(), Box<dy
         "GET_EVENT_USERS" =>{
             if let Some(user) = &stream.1{
                 if user.teacher{
-                    get_event_users(serde_json::from_str::<Value>(&request.payload)?, &user.code)?;
-                    String::new()
+                    json!({ "users": get_event_users(serde_json::from_str::<Value>(&request.payload)?, &user.code)? }).to_string()
                 }
                 else{
                    return Err(Box::new(PlainError::new()));
@@ -251,6 +255,19 @@ fn handle_connection(stream: &mut (TcpStream, Option<User>))-> Result<(), Box<dy
                 if user.teacher{
                     remove_announcement(serde_json::from_str::<Value>(&request.payload)?, user.id)?;
                     String::new()
+                }
+                else{
+                   return Err(Box::new(PlainError::new()));
+                }
+            }
+            else{
+               return Err(Box::new(PlainError::new()));
+            }
+        }
+        "GET_CLASS_LIST" =>{
+            if let Some(user) = &stream.1{
+                if user.teacher{
+                    json!({ "class_list": get_class_list(&user.code)? }).to_string()
                 }
                 else{
                    return Err(Box::new(PlainError::new()));

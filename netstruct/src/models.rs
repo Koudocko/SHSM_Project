@@ -3,6 +3,7 @@ use diesel::prelude::*;
 use crate::schema::*;
 
 #[derive(Identifiable, Queryable, Clone)]
+#[derive(Serialize, Deserialize)]
 pub struct User{
     pub id: i32,
     pub username: String,
