@@ -12,6 +12,15 @@ addButton.addEventListener('click', () => {
     modal.style.display = 'block';
 });
 
+// Event listener for clicking on add certification.
+const eventButton = document.querySelectorAll(".view-signups");
+eventButton.forEach(button => {
+    button.addEventListener('click', () => {
+        const modal = document.querySelector("#view-modal");
+        modal.style.display = 'block';
+    });
+});
+
 // Add event listener to the close buttons in the modals
 const closeButtons = document.querySelectorAll('.close-btn');
 closeButtons.forEach(button => {
