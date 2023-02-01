@@ -304,15 +304,15 @@ pub fn remove_user_event(payload: Value, user_id: i32)-> Result<(), Box<dyn Erro
 }
 
 
-pub fn certify_user(payload: Value)-> Result<(), Box<dyn Error>>{
+pub fn certify_user(payload: Value, course_code: &str)-> Result<(), Box<dyn Error>>{
     let connection = &mut establish_connection();
 
     if let Some(event_title) = payload["title"].as_str(){
         if let Some(event_completed) = payload["completed"].as_bool(){
             if let Some(user_username) = payload["username"].as_str(){
                 let user = users::dsl::users.filter(users::dsl::username.eq(user_username))
-                    .first::<User>(connection)
-                    .unwrap();
+                    .filter(users::dsl::code.eq(course_code))
+                    .first::<User>(connection)?;
 
                 diesel::update(events::dsl::events.filter(events::dsl::title.eq(event_title)).filter(events::dsl::user_id.eq(user.id)))
                     .set(events::dsl::completed.eq(event_completed))
@@ -321,6 +321,50 @@ pub fn certify_user(payload: Value)-> Result<(), Box<dyn Error>>{
                 return Ok(());
             }
         }
+    }
+
+    Err(Box::new(PlainError::new()))
+}
+
+pub fn get_event_users(payload: Value, class_code: &str)-> Result<Vec<String>, Box<dyn Error>>{
+    let connection = &mut establish_connection();
+
+    if let Some(event_title) = payload["title"].as_str(){
+        let course = users::dsl::users.filter(users::dsl::teacher.eq(false))
+            .filter(users::dsl::code.eq(class_code))
+            .first::<User>(connection)
+            .unwrap();
+
+        return Ok(Event::belonging_to(&course)
+            .load::<Event>(connection)
+            .expect("Error loading announcements")
+            .into_iter()
+            .filter_map(|event|{
+                if event.title == event_title{
+                    Some(users::dsl::users.filter(users::dsl::id.eq(event.user_id)).first::<User>(connection).unwrap().username)
+                }
+                else{
+                    None
+                }
+            })
+            .collect());
+    }
+
+    Err(Box::new(PlainError::new()))
+}
+
+pub fn delete_user(payload: Value, course_code: &str)-> Result<(), Box<dyn Error>>{
+    let connection = &mut establish_connection();
+
+    if let Some(user_username) = payload["username"].as_str(){
+        let user = users::dsl::users.filter(users::dsl::username.eq(user_username))
+            .filter(users::dsl::code.eq(course_code))
+            .first::<User>(connection)?;
+
+        diesel::delete(&user)
+            .execute(connection)?;
+
+        return Ok(());
     }
 
     Err(Box::new(PlainError::new()))
