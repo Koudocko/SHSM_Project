@@ -31,6 +31,56 @@ static mut IS_TEACHER: bool = false;
 
 struct WindowHandle(Mutex<Window>);
 
+
+#[tauri::command]
+fn certify_user(username: String, certification_name: String, checked: bool, window: State<WindowHandle>){
+    write_stream(&mut *STREAM.lock().unwrap(), 
+        Package { 
+            header: String::from("CERTIFY_USER"), 
+            payload: json!({ "username": username, "title": certification_name, "completed": checked }).to_string()
+        }
+    ).unwrap();
+
+    read_stream(&mut *STREAM.lock().unwrap());
+    sync_elements(String::from("CLASSLIST"), window);
+}
+
+#[tauri::command]
+fn get_user_events(username: String, window: State<WindowHandle>){
+    write_stream(&mut *STREAM.lock().unwrap(), 
+        Package { 
+            header: String::from("GET_USER_EVENTS"), 
+            payload: json!({ "username": username }).to_string()
+        }
+    ).unwrap();
+
+    let response = read_stream(&mut *STREAM.lock().unwrap());
+
+    window.0.lock().unwrap()
+        .eval("document.getElementById('certifications-container').innerHTML = '';")
+        .unwrap();
+
+    if let Some(events) = unpack(&response.payload, "events").as_array(){
+        for event in events{
+            let event: Event = serde_json::from_value(event.clone()).unwrap();
+
+            let checked = if event.completed
+                {"checked"}
+                else
+                {""};
+            if event.certification{
+                window.0.lock().unwrap()
+                    .eval(&format!("
+                        document.getElementById('certifications container').innerHTML += `
+                          <span>{} <input class='check' type='checkbox' name='{}' {checked}></span>`;
+                    ", event.title, event.title))
+                    .unwrap();
+            }
+        }
+    }
+    sync_elements(String::from("CLASSLIST"), window);
+}
+
 #[tauri::command]
 fn remove_announcement(title: String, window: State<WindowHandle>){
     write_stream(&mut *STREAM.lock().unwrap(), 
@@ -440,7 +490,7 @@ async fn main(){
             app.manage(WindowHandle(Mutex::new(app.get_window("main").unwrap())));
             Ok(())
         })
-        .invoke_handler(tauri::generate_handler![create_account, login_account, add_announcement, sync_elements, add_event, remove_user, update_user, remove_announcement])
+        .invoke_handler(tauri::generate_handler![create_account, login_account, add_announcement, sync_elements, add_event, remove_user, update_user, remove_announcement, get_user_events, certify_user])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");
 }

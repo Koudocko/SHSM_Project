@@ -1,8 +1,8 @@
 // Add event listeners to the edit and reset buttons
 document.getElementById("students-container").addEventListener("click", function(e){
+    var _username = e.target.parentNode.parentNode.querySelector('.username1').textContent;
+
     if (e.target.className == "edit-btn"){
-        var _username = e.target.parentNode.parentNode.querySelector('.username1').textContent;
-    
         // Fill the form with the current student information
         document.querySelector('#edit-username').value = _username;
 
@@ -26,8 +26,19 @@ document.getElementById("students-container").addEventListener("click", function
         });
     }
     else if (e.target.className == "addcrt-btn"){
+        const { invoke } = window.__TAURI__.tauri 
         const modal = document.querySelector("#add-modal");
         modal.style.display = 'block';
+
+        invoke('get_user_events', { username: _username })
+          .then(() =>{
+            document.getElementById("certifications-container").addEventListener("click", function(f){
+                if (f.target.className == "check"){
+                    invoke('certify_user', { username: _username, certificationName: f.target.name, checked: f.target.checked })
+                      .then(() =>{});
+                }
+            });
+          });
     }
     else if (e.target.className == "rmv-btn"){
         const { invoke } = window.__TAURI__.tauri 

@@ -109,6 +109,24 @@ fn handle_connection(stream: &mut (TcpStream, Option<User>))-> Result<(), Box<dy
                return Err(Box::new(PlainError::new()))
             }
         }
+        "GET_USER_EVENTS_CL" =>{
+            if let Some(user) = &stream.1{
+                if user.teacher{
+                    if let Some(username) = unpack(&request.payload, "username").as_str(){
+                        json!({ "events": get_user_events(username) }).to_string()
+                    }
+                    else{
+                       return Err(Box::new(PlainError::new()))
+                    }
+                }
+                else{
+                   return Err(Box::new(PlainError::new()))
+                }
+            }
+            else{
+               return Err(Box::new(PlainError::new()))
+            }
+        }
         "GET_SHSM_EVENTS" =>{
             if let Some(user) = &stream.1{
                 json!({ "events": get_shsm_events(&user.code) }).to_string()
