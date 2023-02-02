@@ -64,6 +64,18 @@ h1 {
     color: #8F4B96;
 }
 
+.event-certified {
+    margin-bottom: 20px;
+    font-size: 0.8em;
+    color: #8F4B96;
+}
+
+.event-description {
+    margin-bottom: 20px;
+    font-size: 0.6em;
+    color: #8F4B96;
+}
+
 .event-signup, .view-signups, #add-event-btn, .edit-event {
     background-color: #8F4B96;
     color: white;
@@ -78,9 +90,24 @@ h1 {
     transition-duration: 0.4s;
 }
 
-.event-signup:hover, .view-signups:hover, #add-event-btn:hover, .edit-event:hover {
+.event-signup:hover, .view-signups:hover, #add-event-btn:hover, .edit-event:hover, .delete {
     background-color: #ccb4dc;
 }
+
+.remove {
+    position: relative;
+    float: left;
+    color: white;
+    border: none;
+    border-radius: 4px;
+    background-color: #8F4B96;
+    transition-duration: 0.4s;
+}
+
+.remove:hover{
+    background-color: #ccb4dc;
+}
+
 
 .withdrawn-button {
     background-color: green;

@@ -20,6 +20,15 @@ eventButton.forEach(button => {
     });
 });
 
+// Event listener for clicking on add certification.
+const editButton = document.querySelectorAll(".edit-event");
+editButton.forEach(button => {
+    button.addEventListener('click', () => {
+        const modal = document.querySelector("#edit-modal");
+        modal.style.display = 'block';
+    });
+});
+
 // Add event listener to the close buttons in the modals
 const closeButtons = document.querySelectorAll('.close-btn');
 closeButtons.forEach(button => {

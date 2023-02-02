@@ -49,8 +49,14 @@ fn add_shsm_event(title: String, description: String, date: String, certificatio
         }
     ).unwrap();
 
-    read_stream(&mut *STREAM.lock().unwrap());
-    sync_elements(String::from("EVENTS"), window);
+    let response = read_stream(&mut *STREAM.lock().unwrap());
+    if response.header == "GOOD"{
+        sync_elements(String::from("EVENTS"), window);
+    }
+    else{
+        MessageDialogBuilder::new("ERROR ENCOUNTERED", unpack(&response.payload, "error").as_str().unwrap())
+           .show(|_|{});
+    }
 }
 
 #[tauri::command]
@@ -70,7 +76,7 @@ fn certify_user(username: String, certification_name: String, checked: bool, win
 fn get_user_events(username: String, window: State<WindowHandle>){
     write_stream(&mut *STREAM.lock().unwrap(), 
         Package { 
-            header: String::from("GET_USER_EVENTS"), 
+            header: String::from("GET_USER_EVENTS_CL"), 
             payload: json!({ "username": username }).to_string()
         }
     ).unwrap();
@@ -143,8 +149,14 @@ fn update_user(username: String, new_username: String, new_password: String, win
         }
     ).unwrap();
 
-    read_stream(&mut *STREAM.lock().unwrap());
-    sync_elements(String::from("CLASSLIST"), window);
+    let response = read_stream(&mut *STREAM.lock().unwrap());
+    if response.header == "GOOD"{
+        sync_elements(String::from("CLASSLIST"), window);
+    }
+    else{
+        MessageDialogBuilder::new("ERROR ENCOUNTERED", unpack(&response.payload, "error").as_str().unwrap())
+           .show(|_|{});
+    }
 }
 
 #[tauri::command]
@@ -216,29 +228,26 @@ fn sync_elements(page_name: String, window: State<WindowHandle>){
 
             let response = read_stream(&mut *STREAM.lock().unwrap());
 
-            // // window.0.lock().unwrap()
-            // //     .eval("document.getElementById('posted-announcement-container').innerHTML = '';")
-            //     // .unwrap();
+            window.0.lock().unwrap()
+                .eval("document.getElementsByClassName('card-container')[0].innerHTML = '';")
+                .unwrap();
 
-            if let Some(certifications) = unpack(&response.payload, "certifications").as_array(){
-                for certification in certifications{
-                    let certification: Event = serde_json::from_value(certification.clone()).unwrap();
-                    
-                    println!("CERTIFICATION:");
-                    println!("Certification Title: {}", certification.title);
-                    println!("Certification Description: {}", certification.description);
-                    println!("Certification Date: {}", certification.date);
-                    println!("Certification Completed: {}", certification.completed);
-                //     // window.0.lock().unwrap()
-                //     //     .eval(&format!("
-                //     //         var announcement = `
-                //     //         <div class='announcement'>
-                //     //             <div class='title'>{}</div>
-                //     //             <div class='description'>{}</div>
-                //     //         </div>`;
-                //     //         document.getElementById('posted-announcement-container').innerHTML += announcement;
-                //     //     ", announcement.title, announcement.description))
-                //     //     .unwrap();
+            if let Some(events) = unpack(&response.payload, "events").as_array(){
+                for event in events{
+                    let event: Event = serde_json::from_value(event.clone()).unwrap();
+
+                    if event.certification && event.completed{
+                        window.0.lock().unwrap()
+                            .eval(&format!("
+                                document.getElementsByClassName('card-container')[0].innerHTML += `
+                                    <div class='card'>
+                                      <h2 class='card-title'>{}</h2>
+                                      <p class='card-description'>{}</p>
+                                      <p class='card-date'>{}</p>
+                                    </div>`;`
+                            ", event.title, event.description, event.date))
+                            .unwrap();
+                    }
                 }
             }
         }
@@ -252,9 +261,9 @@ fn sync_elements(page_name: String, window: State<WindowHandle>){
 
             let response = read_stream(&mut *STREAM.lock().unwrap());
 
-            // window.0.lock().unwrap()
-            //     .eval("document.getElementById('posted-announcement-container').innerHTML = '';")
-                // .unwrap();
+            window.0.lock().unwrap()
+                .eval("document.getElementsByClassName('event-container')[0].innerHTML = '';")
+                .unwrap();
 
             if let Some(events) = unpack(&response.payload, "events").as_array(){
                 for event in events{
@@ -266,16 +275,19 @@ fn sync_elements(page_name: String, window: State<WindowHandle>){
                     println!("Event Date: {}", event.date);
                     println!("Event Certification: {}", event.certification);
                     
-                //     // window.0.lock().unwrap()
-                //     //     .eval(&format!("
-                //     //         var announcement = `
-                //     //         <div class='announcement'>
-                //     //             <div class='title'>{}</div>
-                //     //             <div class='description'>{}</div>
-                //     //         </div>`;
-                //     //         document.getElementById('posted-announcement-container').innerHTML += announcement;
-                //     //     ", announcement.title, announcement.description))
-                //     //     .unwrap();
+                    window.0.lock().unwrap()
+                        .eval(&format!("
+                            document.getElementsByClassName('event-container')[0].innerHTML += `
+                              <div class='event'>
+                                <h3 class='event-title'>{}</h3>
+                                <p class='event-date'>Date: {}</p>
+                                <p class='event-certified'>Certified: {}</p>
+                                <p class='event-description'>Description: {}</p>
+                                <button class='event-signup' id='signup-button'>Sign Up</button>
+                              </div>
+                            `;
+                        ", event.title, event.date, event.certification, event.description))
+                        .unwrap();
                 }
             }
         }
@@ -341,6 +353,10 @@ fn sync_elements(page_name: String, window: State<WindowHandle>){
                 for announcement in announcements{
                     let announcement: Announcement = serde_json::from_value(announcement.clone()).unwrap();
                     
+                    let button = if unsafe{ IS_TEACHER }
+                        { "<button class='delete'>delete</button>" }
+                        else
+                        { "" };
                     window.0.lock().unwrap()
                         .eval(&format!("
                             var announcement = `
@@ -348,7 +364,7 @@ fn sync_elements(page_name: String, window: State<WindowHandle>){
                                 <div class='title'>{}</div>
                                 <div class='description'>{}</div>
                                 <div class='date'>{}</div>
-                                <button class='delete'>delete</button>
+                                {button}  
                             </div>`;
                             document.getElementById('posted-announcement-container').innerHTML += announcement;
                         ", announcement.title, announcement.description, announcement.date))
