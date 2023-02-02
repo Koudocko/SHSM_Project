@@ -4,7 +4,7 @@ use std::{
     thread, error::Error
 };
 use netstruct::*;
-use netstruct::models::{NewUser, User};
+use netstruct::models::{NewUser, User, NewEvent};
 use serde_json::{Value, json};
 
 // const SOCKET: &str = "192.168.2.5:7878";
@@ -138,7 +138,7 @@ fn handle_connection(stream: &mut (TcpStream, Option<User>))-> Result<(), Box<dy
         "ADD_SHSM_EVENT" =>{
             if let Some(user) = &stream.1{
                 if user.teacher{
-                    if add_shsm_event(serde_json::from_str::<Value>(&request.payload)?, user.id)?{
+                    if add_shsm_event(serde_json::from_str::<NewEvent>(&request.payload)?, user.id){
                         String::new()
                     }
                     else{

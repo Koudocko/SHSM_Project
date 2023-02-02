@@ -222,41 +222,21 @@ pub fn get_user_events(name: &str)-> Vec<Event>{
         .expect("Error loading certifications!")
 }
 
-pub fn add_shsm_event(payload: Value, shsm_id: i32)-> Result<bool, Box<dyn Error>>{
+pub fn add_shsm_event(mut payload: NewEvent, shsm_id: i32)-> bool{
     let connection = &mut establish_connection();
+    let exists = events::dsl::events.filter(events::dsl::title.eq(&payload.title)).first::<Event>(connection).is_ok();
 
-    if let Some(event_title) = payload["title"].as_str(){
-        if let Some(event_description) = payload["description"].as_str(){
-            if let Some(event_date) = payload["date"].as_str(){
-                if let Some(event_certification) = payload["certification"].as_bool(){
-                    if let Some(event_completed) = payload["completed"].as_bool(){
-                        let exists = events::dsl::events.filter(events::dsl::title.eq(event_title)).first::<Event>(connection).is_ok();
+    if !exists{
+        payload.user_id = shsm_id;
+        println!("Adding event: {payload:?}");
 
-                        if !exists{
-                            let new_event = NewEvent{
-                                title: event_title.to_owned(),
-                                description: event_description.to_owned(),
-                                date: event_date.to_owned(),
-                                certification: event_certification,
-                                completed: event_completed,
-                                user_id: shsm_id
-                            };
-                            println!("Adding event: {new_event:?}");
-
-                            diesel::insert_into(schema::events::table)
-                                .values(&new_event)
-                                .execute(connection)
-                                .expect("Failed to insert event!");
-                        }
-
-                        return Ok(!exists);
-                    }
-                }
-            }
-        }
+        diesel::insert_into(schema::events::table)
+            .values(&payload)
+            .execute(connection)
+            .expect("Failed to insert event!");
     }
 
-    Err(Box::new(PlainError::new()))
+    return !exists;
 }
 
 pub fn add_user_event(payload: Value, user_id: i32, class_code: &str)-> Result<(), Box<dyn Error>>{

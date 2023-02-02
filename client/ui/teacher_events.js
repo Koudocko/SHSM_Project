@@ -7,7 +7,6 @@ $(function () {
 
 const addButton = document.querySelector("#add-event-btn");
 addButton.addEventListener('click', () => {
-    console.log("HElLO");
     const modal = document.querySelector("#add-event-modal");
     modal.style.display = 'block';
 });
@@ -29,3 +28,14 @@ closeButtons.forEach(button => {
         modal.style.display = 'none';
     });
 });
+
+function add_shsm_event(){
+    console.log("add_shsm_event called!");
+    var _username = document.getElementById("event_name").value;
+    var _description = document.getElementById("event_description").value;
+    var _date = document.getElementById("event_date").value;
+    var _certification = document.getElementById("event_certified").checked;
+
+    invoke('add_shsm_event', { username: _username, description: _description, date: _date, certification: _certification })
+      .then(() =>{});
+}

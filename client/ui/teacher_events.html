@@ -76,37 +76,26 @@
         <button id="add-event-btn" style="position: relative; top: 30%;">Add Event</button>
       </div>
     </div>
-
-
     <div class="modal" id="view-modal">
       <div class="modal-content">
         <span class="close-btn">&times;</span>
         <h2>Students Signed Up</h2>
+        <div id="students-container"></div>
       </div>
     </div>
-
-
     <div class="modal" id="add-event-modal">
       <div class="modal-content">
         <span class="close-btn">&times;</span>
         <h2>Student Events</h2>
         <form>
-          <input type="text" placeholder="Event Name">
-          <input type="text" placeholder="Event Date">
-          <button type="submit" class="save-btn">Save</button>
+          <span>Name<input id="event_name" type="text" placeholder="Event Name"></span>
+          <span>Description<input id="event_description" type="text" placeholder="Event Description"></span>
+          <span>Date <input id="event_date" type="date"></span><br>
+          <span>Certification <input id="event_certified" type="checkbox"></span>
+          <button class="save-btn" onClick="add_shsm_event()">Save</button>
         </form>
       </div>
     </div>
-
-
-    <form id="event-signup-form" method="post">
-      <label for="name">Name:</label>
-      <input type="text" id="name" name="name" />
-      <label for="email">Email:</label>
-      <input type="email" id="email" name="email" />
-      <input type="hidden" id="event-id" name="event-id" value="" />
-      <input type="submit" value="Sign Up" />
-    </form>
     <script src="teacher_events.js"></script>
     <script>
       $(function () {
@@ -114,34 +103,7 @@
           var $nav = $("#mainNavbar");
           $nav.toggleClass("scrolled", $(this).scrollTop() > $nav.height());
         });
-        
       });
-
-      const signupButton = document.getElementById("signup-button");
-      signupButton.addEventListener("click", function () {
-        // code to change the button text goes here
-        signupButton.textContent = "Withdraw";
-        
-      });
-      let isSignedUp = false;
-      signupButton.addEventListener("click", function () {
-        if (isSignedUp) {
-          signupButton.textContent = "Withdraw";
-          isSignedUp = false;
-        } else {
-          signupButton.textContent = "Sign Up";
-          isSignedUp = true;
-        }
-      });
-
-      signupButton.addEventListener("click", function() {
-  accepted.classList.add("animatedAccept");
-  setTimeout(function(){
-    signupButton.textContent = "Withdrawn";
-    accepted.classList.remove("animatedAccept");
-    signupButton.style.backgroundColor = "green";
-  },500);
-});
     </script>
     <script src="main.js"></script>
   </body>

@@ -8,7 +8,7 @@ use std::{
     sync::Mutex,
 };
 use netstruct::*;
-use netstruct::models::{NewUser, Announcement, Event};
+use netstruct::models::{NewUser, Announcement, Event, NewEvent};
 use ring::rand::SecureRandom;
 use ring::{digest, pbkdf2, rand};
 use std::num::NonZeroU32;
@@ -31,6 +31,27 @@ static mut IS_TEACHER: bool = false;
 
 struct WindowHandle(Mutex<Window>);
 
+#[tauri::command]
+fn add_shsm_event(title: String, description: String, date: String, certification: bool, window: State<WindowHandle>){
+    let new_event = NewEvent{
+        title,
+        description,
+        date,
+        certification,
+        completed: false,
+        user_id: 0
+    };
+
+    write_stream(&mut *STREAM.lock().unwrap(), 
+        Package { 
+            header: String::from("CERTIFY_USER"), 
+            payload: serde_json::to_string(&new_event).unwrap()
+        }
+    ).unwrap();
+
+    read_stream(&mut *STREAM.lock().unwrap());
+    sync_elements(String::from("EVENTS"), window);
+}
 
 #[tauri::command]
 fn certify_user(username: String, certification_name: String, checked: bool, window: State<WindowHandle>){
@@ -490,7 +511,7 @@ async fn main(){
             app.manage(WindowHandle(Mutex::new(app.get_window("main").unwrap())));
             Ok(())
         })
-        .invoke_handler(tauri::generate_handler![create_account, login_account, add_announcement, sync_elements, add_event, remove_user, update_user, remove_announcement, get_user_events, certify_user])
+        .invoke_handler(tauri::generate_handler![create_account, login_account, add_announcement, sync_elements, add_event, remove_user, update_user, remove_announcement, get_user_events, certify_user, add_shsm_event])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");
 }

@@ -60,6 +60,7 @@ pub struct Event{
 
 #[derive(Insertable, Debug)]
 #[diesel(table_name = events)]
+#[derive(Serialize, Deserialize)]
 pub struct NewEvent {
     pub title: String,
     pub description: String,
