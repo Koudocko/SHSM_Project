@@ -3,6 +3,7 @@
   windows_subsystem = "windows"
 )]
 
+use std::collections::HashMap;
 use std::{
     net::TcpStream,
     sync::Mutex,
@@ -32,6 +33,107 @@ static mut IS_TEACHER: bool = false;
 struct WindowHandle(Mutex<Window>);
 
 #[tauri::command]
+fn modify_user_event(title: String, window: State<WindowHandle>){
+    write_stream(&mut *STREAM.lock().unwrap(), 
+        Package { 
+            header: String::from("GET_USER_EVENTS"), 
+            payload: String::new()
+        }
+    ).unwrap();
+
+    let response = read_stream(&mut *STREAM.lock().unwrap());
+
+    if let Some(events) = unpack(&response.payload, "events").as_array(){
+        if events.into_iter().any(|event| serde_json::from_value::<Event>(event.clone()).unwrap().title == title){
+            write_stream(&mut *STREAM.lock().unwrap(), 
+                Package { 
+                    header: String::from("REMOVE_USER_EVENT"), 
+                    payload: json!({ "title": title }).to_string()
+                }
+            ).unwrap();
+        }
+        else{
+            write_stream(&mut *STREAM.lock().unwrap(), 
+                Package { 
+                    header: String::from("ADD_USER_EVENT"), 
+                    payload: json!({ "title": title }).to_string()
+                }
+            ).unwrap();
+        }
+    }
+    else{
+        write_stream(&mut *STREAM.lock().unwrap(), 
+            Package { 
+                header: String::from("ADD_USER_EVENT"), 
+                payload: json!({ "title": title }).to_string()
+            }
+        ).unwrap();
+    }
+
+    read_stream(&mut *STREAM.lock().unwrap());
+    sync_elements(String::from("EVENTS"), window);
+}
+
+#[tauri::command]
+fn remove_event(title: String, window: State<WindowHandle>){
+    write_stream(&mut *STREAM.lock().unwrap(), 
+        Package { 
+            header: String::from("REMOVE_EVENT"), 
+            payload: json!({ "title": title }).to_string()
+        }
+    ).unwrap();
+
+    read_stream(&mut *STREAM.lock().unwrap());
+    sync_elements(String::from("EVENTS"), window);
+}
+
+#[tauri::command]
+fn get_event_users(title: String, window: State<WindowHandle>){
+    write_stream(&mut *STREAM.lock().unwrap(), 
+        Package { 
+            header: String::from("GET_EVENT_USERS"), 
+            payload: json!({ "title": title }).to_string()
+        }
+    ).unwrap();
+
+    let response = read_stream(&mut *STREAM.lock().unwrap());
+
+    window.0.lock().unwrap()
+        .eval("document.getElementById('students-container').innerHTML = '';")
+        .unwrap();
+
+    if let Some(users) = unpack(&response.payload, "users").as_array(){
+        for user in users{
+            let user: String = serde_json::from_value(user.clone()).unwrap();
+            println!("WOAH: {user}");
+
+            window.0.lock().unwrap()
+                .eval(&format!("document.getElementById('students-container').innerHTML += <p>{}</p>", user))
+                .unwrap();
+        }
+    }
+}
+
+#[tauri::command]
+fn update_event(title: String, new_title: String, new_description: String, new_date: String, new_certification: bool, window: State<WindowHandle>){
+    write_stream(&mut *STREAM.lock().unwrap(), 
+        Package { 
+            header: String::from("UPDATE_EVENT"), 
+            payload: json!({ "title": title, "new_title": new_title, "new_description": new_description, "new_date": new_date, "new_certification": new_certification }).to_string()
+        }
+    ).unwrap();
+
+    let response = read_stream(&mut *STREAM.lock().unwrap());
+    if response.header == "GOOD"{
+        sync_elements(String::from("EVENTS"), window);
+    }
+    else{
+        MessageDialogBuilder::new("ERROR ENCOUNTERED", unpack(&response.payload, "error").as_str().unwrap())
+           .show(|_|{});
+    }
+}
+
+#[tauri::command]
 fn add_shsm_event(title: String, description: String, date: String, certification: bool, window: State<WindowHandle>){
     let new_event = NewEvent{
         title,
@@ -44,7 +146,7 @@ fn add_shsm_event(title: String, description: String, date: String, certificatio
 
     write_stream(&mut *STREAM.lock().unwrap(), 
         Package { 
-            header: String::from("CERTIFY_USER"), 
+            header: String::from("ADD_SHSM_EVENT"), 
             payload: serde_json::to_string(&new_event).unwrap()
         }
     ).unwrap();
@@ -105,7 +207,6 @@ fn get_user_events(username: String, window: State<WindowHandle>){
             }
         }
     }
-    sync_elements(String::from("CLASSLIST"), window);
 }
 
 #[tauri::command]
@@ -252,6 +353,24 @@ fn sync_elements(page_name: String, window: State<WindowHandle>){
             }
         }
         "EVENTS" =>{
+            let mut signed_up = HashMap::new();
+            write_stream(&mut *STREAM.lock().unwrap(), 
+                Package { 
+                    header: String::from("GET_USER_EVENTS"), 
+                    payload: String::new()
+                }
+            ).unwrap();
+
+            let response = read_stream(&mut *STREAM.lock().unwrap());
+
+            if let Some(events) = unpack(&response.payload, "events").as_array(){
+                for event in events{
+                    let event: Event = serde_json::from_value(event.clone()).unwrap();
+
+                    signed_up.insert(event.title.to_owned(), event);
+                }
+            }
+
             write_stream(&mut *STREAM.lock().unwrap(), 
                 Package { 
                     header: String::from("GET_SHSM_EVENTS"), 
@@ -269,12 +388,19 @@ fn sync_elements(page_name: String, window: State<WindowHandle>){
                 for event in events{
                     let event: Event = serde_json::from_value(event.clone()).unwrap();
 
-                    println!("EVENT:");
-                    println!("Event Title: {}", event.title);
-                    println!("Event Description: {}", event.description);
-                    println!("Event Date: {}", event.date);
-                    println!("Event Certification: {}", event.certification);
-                    
+                    let button = if unsafe{ IS_TEACHER }
+                        { "<button class='edit-event'>Edit Event</button>
+                        <button class='view-signups' id='signup-button'>View Signups</button>" }
+                        else
+                        {
+                            if signed_up.get(&event.title).is_some(){
+                                "<button class='event-signup' id='signup-button'>Withdraw</button>"  
+                            }
+                            else{
+                                "<button class='event-signup' id='signup-button'>Signup</button>"  
+                            }
+                        };
+
                     window.0.lock().unwrap()
                         .eval(&format!("
                             document.getElementsByClassName('event-container')[0].innerHTML += `
@@ -282,8 +408,8 @@ fn sync_elements(page_name: String, window: State<WindowHandle>){
                                 <h3 class='event-title'>{}</h3>
                                 <p class='event-date'>Date: {}</p>
                                 <p class='event-certified'>Certified: {}</p>
-                                <p class='event-description'>Description: {}</p>
-                                <button class='event-signup' id='signup-button'>Sign Up</button>
+                                <p class='event-description'>{}</p>
+                                {button} 
                               </div>
                             `;
                         ", event.title, event.date, event.certification, event.description))
@@ -527,7 +653,7 @@ async fn main(){
             app.manage(WindowHandle(Mutex::new(app.get_window("main").unwrap())));
             Ok(())
         })
-        .invoke_handler(tauri::generate_handler![create_account, login_account, add_announcement, sync_elements, add_event, remove_user, update_user, remove_announcement, get_user_events, certify_user, add_shsm_event])
+        .invoke_handler(tauri::generate_handler![create_account, login_account, add_announcement, sync_elements, add_event, remove_user, update_user, remove_announcement, get_user_events, certify_user, add_shsm_event, update_event, get_event_users, remove_event, modify_user_event])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");
 }

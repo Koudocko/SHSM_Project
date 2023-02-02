@@ -424,23 +424,29 @@ pub fn update_event(payload: Value, shsm_id: i32)-> Result<bool, Box<dyn Error>>
         if let Some(new_event_title) = payload["new_title"].as_str(){
             if let Some(new_event_description) = payload["new_description"].as_str(){
                 if let Some(new_event_date) = payload["new_date"].as_str(){
-                    if let Some(new_event_certification) = payload["new_certification"].as_str(){
+                    if let Some(new_event_certification) = payload["new_certification"].as_bool(){
                         if events::dsl::events.filter(events::dsl::title.eq(new_event_title)).first::<Event>(connection).is_err(){
                             let event = events::dsl::events.filter(events::dsl::title.eq(event_title))
                                 .filter(events::dsl::user_id.eq(shsm_id))
                                 .first::<Event>(connection)?;
 
-                            diesel::update(&event)
-                                .set(events::dsl::title.eq(new_event_title))
-                                .execute(connection)?;
+                            if !new_event_title.is_empty(){
+                                diesel::update(&event)
+                                    .set(events::dsl::title.eq(new_event_title))
+                                    .execute(connection)?;
+                            }
+                            if !new_event_description.is_empty(){
                             diesel::update(&event)
                                 .set(events::dsl::description.eq(new_event_description))
                                 .execute(connection)?;
+                            }
+                            if !new_event_date.is_empty(){
                             diesel::update(&event)
                                 .set(events::dsl::date.eq(new_event_date))
                                 .execute(connection)?;
+                            }
                             diesel::update(&event)
-                                .set(events::dsl::date.eq(new_event_certification))
+                                .set(events::dsl::certification.eq(new_event_certification))
                                 .execute(connection)?;
 
                             return Ok(true);

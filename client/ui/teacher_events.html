@@ -73,10 +73,10 @@
         <button class="view-signups" id="signup-button">View Signups</button>
         <button class="edit-event">Edit Event</button>
       </div>
-      <div class="event" style="vertical-align: center;">
+    </div>
+      <div class="event" style="vertical-align: center">
         <button id="add-event-btn" style="position: relative; top: 30%;">Add Event</button>
       </div>
-    </div>
 
     <div class="modal" id="view-modal">
       <div class="modal-content">
@@ -95,7 +95,7 @@
           <span>Description<input id="event_description" type="text" placeholder="Event Description"></span>
           <span>Date <input id="event_date" type="date"></span><br>
           <span>Certification <input id="event_certified" type="checkbox"></span>
-          <button class="save-btn" onClick="add_shsm_event()">Save</button>
+          <button id="save-add" class="save-btn-1">Save</button>
         </form>
       </div>
     </div>
@@ -106,11 +106,11 @@
         <button class="remove">Remove</button>
         <h2>Edit Event</h2>
         <form>
-          <span>Name<input id="event_name" type="text" placeholder="Event Name"></span>
-          <span>Description<input id="event_description" type="text" placeholder="Event Description"></span>
-          <span>Date <input id="event_date" type="date"></span><br>
-          <span>Certification <input id="event_certified" type="checkbox"></span>
-          <button class="save-btn" onClick="add_shsm_event()">Save</button>
+          <span>Name<input id="event_name_e" type="text" placeholder="Event Name"></span>
+          <span>Description<input id="event_description_e" type="text" placeholder="Event Description"></span>
+          <span>Date <input id="event_date_e" type="date"></span><br>
+          <span>Certification <input id="event_certified_e" type="checkbox"></span>
+          <button id="save-update" class="save-btn-2">Save</button>
         </form>
       </div>
     </div>
