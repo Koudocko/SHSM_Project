@@ -429,12 +429,12 @@ pub fn update_event(payload: Value, shsm_id: i32, class_code: &str)-> Result<boo
                         if events::dsl::events.filter(events::dsl::title.eq(new_event_title))
                             .filter(events::dsl::user_id.eq(shsm_id))
                             .first::<Event>(connection)
-                            .is_err()
+                            .is_err() || (new_event_title == event_title)
                         {
                             for event in users::table
                                 .inner_join(events::table.on(events::dsl::user_id.eq(users::dsl::id)))
                                 .load::<(User, Event)>(connection)?.into_iter().filter_map(|(user, event)|{
-                                if (user.code == class_code) && (event.title == event_title)
+                                if (user.code == class_code) && (event.title == event_title) && (!event.completed)
                                 {Some(event)}
                                 else
                                 {None}
@@ -473,16 +473,26 @@ pub fn update_event(payload: Value, shsm_id: i32, class_code: &str)-> Result<boo
     Err(Box::new(PlainError::new()))
 }
 
-pub fn remove_event(payload: Value, shsm_id: i32)-> Result<(), Box<dyn Error>>{
+pub fn remove_event(payload: Value, class_code: &str)-> Result<(), Box<dyn Error>>{
     let connection = &mut establish_connection();
 
     if let Some(event_title) = payload["title"].as_str(){
-        let event = events::dsl::events.filter(events::dsl::title.eq(event_title))
-            .filter(events::dsl::user_id.eq(shsm_id))
-            .first::<Event>(connection)?;
+        // let event = events::dsl::events.filter(events::dsl::title.eq(event_title))
+        //     .filter(events::dsl::cdoe.eq(class_code))
+        //     .first::<Event>(connection)?;
+        for event in users::table
+            .inner_join(events::table.on(events::dsl::user_id.eq(users::dsl::id)))
+            .load::<(User, Event)>(connection)?.into_iter().filter_map(|(user, event)|{
+            if (user.code == class_code) && (event.title == event_title) && (!event.completed)
+            {Some(event)}
+            else
+            {None}
+            }).collect::<Vec<Event>>()
+        {
+            diesel::delete(&event)
+                .execute(connection)?;
+        }
 
-        diesel::delete(&event)
-            .execute(connection)?;
 
         return Ok(());
     }

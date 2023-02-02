@@ -175,6 +175,8 @@ fn certify_user(username: String, certification_name: String, checked: bool, win
 
 #[tauri::command]
 fn get_user_events(username: String, window: State<WindowHandle>){
+    let mut signed_up = HashMap::new();
+
     write_stream(&mut *STREAM.lock().unwrap(), 
         Package { 
             header: String::from("GET_USER_EVENTS_CL"), 
@@ -182,6 +184,21 @@ fn get_user_events(username: String, window: State<WindowHandle>){
         }
     ).unwrap();
 
+    let response = read_stream(&mut *STREAM.lock().unwrap());
+    if let Some(events) = unpack(&response.payload, "events").as_array(){
+        for event in events{
+            let event: Event = serde_json::from_value(event.clone()).unwrap();
+
+            signed_up.insert(event.title.to_owned(), event);
+        }
+    }
+
+    write_stream(&mut *STREAM.lock().unwrap(), 
+        Package { 
+            header: String::from("GET_USER_EVENTS"), 
+            payload: String::new()
+        }
+    ).unwrap();
     let response = read_stream(&mut *STREAM.lock().unwrap());
 
     window.0.lock().unwrap()
@@ -192,17 +209,20 @@ fn get_user_events(username: String, window: State<WindowHandle>){
         for event in events{
             let event: Event = serde_json::from_value(event.clone()).unwrap();
 
-            let checked = if event.completed
-                {"checked"}
-                else
-                {""};
             if event.certification{
-                window.0.lock().unwrap()
-                    .eval(&format!("
-                        document.getElementById('certifications-container').innerHTML += `
-                          <span>{} <input class='check' type='checkbox' name='{}' {checked}></span>`;
-                    ", event.title, event.title))
-                    .unwrap();
+                if let Some(state) = signed_up.get(&event.title){
+                    let checked = if state.completed
+                    {"checked"}
+                    else
+                    {""};
+
+                    window.0.lock().unwrap()
+                        .eval(&format!("
+                            document.getElementById('certifications-container').innerHTML += `
+                              <span>{} <input class='check' type='checkbox' name='{}' {checked}></span>`;
+                        ", event.title, event.title))
+                        .unwrap();
+                }
             }
         }
     }
