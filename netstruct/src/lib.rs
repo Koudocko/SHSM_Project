@@ -224,7 +224,10 @@ pub fn get_user_events(name: &str)-> Vec<Event>{
 
 pub fn add_shsm_event(mut payload: NewEvent, shsm_id: i32)-> bool{
     let connection = &mut establish_connection();
-    let exists = events::dsl::events.filter(events::dsl::title.eq(&payload.title)).first::<Event>(connection).is_ok();
+    let exists = events::dsl::events.filter(events::dsl::title.eq(&payload.title))
+        .filter(events::dsl::user_id.eq(shsm_id))
+        .first::<Event>(connection)
+        .is_ok();
 
     if !exists{
         payload.user_id = shsm_id;
@@ -243,33 +246,39 @@ pub fn add_user_event(payload: Value, user_id: i32, class_code: &str)-> Result<(
     let connection = &mut establish_connection();
 
     if let Some(event_title) = payload["title"].as_str(){
-        let course = users::dsl::users.filter(users::dsl::teacher.eq(true))
-            .filter(users::dsl::code.eq(class_code))
-            .first::<User>(connection)
-            .unwrap();
-
-        if let Some(shsm_event) = Event::belonging_to(&course)
-            .load::<Event>(connection)
-            .expect("Error loading announcements")
-            .into_iter()
-            .filter(|event| event.title == event_title)
-            .next()
+        if events::dsl::events.filter(events::dsl::title.eq(event_title))
+            .filter(events::dsl::user_id.eq(user_id))
+            .first::<Event>(connection)
+            .is_err()
         {
-            let new_event = NewEvent{
-                title: shsm_event.title,
-                description: shsm_event.description,
-                date: shsm_event.date,
-                certification: shsm_event.certification,
-                completed: shsm_event.completed,
-                user_id,
-            };
+            let course = users::dsl::users.filter(users::dsl::teacher.eq(true))
+                .filter(users::dsl::code.eq(class_code))
+                .first::<User>(connection)
+                .unwrap();
 
-            diesel::insert_into(schema::events::table)
-                .values(&new_event)
-                .execute(connection)
-                .expect("Failed to insert event!");
+            if let Some(shsm_event) = Event::belonging_to(&course)
+                .load::<Event>(connection)
+                .expect("Error loading announcements")
+                .into_iter()
+                .filter(|event| event.title == event_title)
+                .next()
+            {
+                let new_event = NewEvent{
+                    title: shsm_event.title,
+                    description: shsm_event.description,
+                    date: shsm_event.date,
+                    certification: shsm_event.certification,
+                    completed: shsm_event.completed,
+                    user_id,
+                };
 
-            return Ok(());
+                diesel::insert_into(schema::events::table)
+                    .values(&new_event)
+                    .execute(connection)
+                    .expect("Failed to insert event!");
+
+                return Ok(());
+            }
         }
     }
 
@@ -289,7 +298,6 @@ pub fn remove_user_event(payload: Value, user_id: i32)-> Result<(), Box<dyn Erro
 
     Err(Box::new(PlainError::new()))
 }
-
 
 pub fn certify_user(payload: Value, course_code: &str)-> Result<(), Box<dyn Error>>{
     let connection = &mut establish_connection();
@@ -317,43 +325,20 @@ pub fn get_event_users(payload: Value, class_code: &str)-> Result<Vec<String>, B
     let connection = &mut establish_connection();
 
     if let Some(event_title) = payload["title"].as_str(){
-        let course = users::dsl::users.filter(users::dsl::teacher.eq(false))
-            .filter(users::dsl::code.eq(class_code))
-                .first::<User>(connection)
-                .unwrap();
-
-        let data: Vec<(String, bool)> = users::table
-            .inner_join(events::table.on(users::dsl::code.eq(class_code)))
-            .select((users::dsl::username, users::dsl::teacher))
-            .load(connection).unwrap();
-
-        let data = data.into_iter().filter_map(|user|{
-            if !user.1
-            {Some(user.0)}
-            else
-            {None}
-        }).collect::<Vec<String>>();
-
-        data.iter().for_each(|user| println!("USER FOUND{user}"));
-        return Ok(data);
-
-        // return Ok(Event::belonging_to(&course)
-        //     .load::<Event>(connection)
-        //     .expect("Error loading announcements")
-        //     .into_iter()
-        //     .filter_map(|event|{
-        //         println!("EVENT FOUND{}", event.title);
-        //         if event.title == event_title{
-        //             Some(users::dsl::users.filter(users::dsl::id.eq(event.user_id)).first::<User>(connection).unwrap().username)
-        //         }
-        //         else{
-        //             None
-        //         }
-        //     })
-        //     .collect());
+        Ok(users::table.inner_join(events::table.on(events::dsl::user_id.eq(users::dsl::id)))
+            .select((users::dsl::username, users::dsl::code, events::dsl::title, users::dsl::teacher))
+            .load::<(String, String, String, bool)>(connection)?
+            .into_iter()
+            .filter_map(|user|{
+                if (!user.3) && (user.2 == event_title) && user.1 == class_code
+                {Some(user.0)}
+                else
+                {None}
+            }).collect::<Vec<String>>())
     }
-
-    Err(Box::new(PlainError::new()))
+    else{
+        Err(Box::new(PlainError::new()))
+    }
 }
 
 pub fn remove_user(payload: Value, course_code: &str)-> Result<(), Box<dyn Error>>{
@@ -433,7 +418,7 @@ pub fn update_user(payload: Value, course_code: &str)-> Result<bool, Box<dyn Err
     Err(Box::new(PlainError::new()))
 }
 
-pub fn update_event(payload: Value, shsm_id: i32)-> Result<bool, Box<dyn Error>>{
+pub fn update_event(payload: Value, shsm_id: i32, class_code: &str)-> Result<bool, Box<dyn Error>>{
     let connection = &mut establish_connection();
 
     if let Some(event_title) = payload["title"].as_str(){
@@ -441,31 +426,41 @@ pub fn update_event(payload: Value, shsm_id: i32)-> Result<bool, Box<dyn Error>>
             if let Some(new_event_description) = payload["new_description"].as_str(){
                 if let Some(new_event_date) = payload["new_date"].as_str(){
                     if let Some(new_event_certification) = payload["new_certification"].as_bool(){
-                        if events::dsl::events.filter(events::dsl::title.eq(new_event_title)).first::<Event>(connection).is_err(){
-                            let event = events::dsl::events.filter(events::dsl::title.eq(event_title))
-                                .filter(events::dsl::user_id.eq(shsm_id))
-                                .first::<Event>(connection)?;
-
-                            if !new_event_title.is_empty(){
+                        if events::dsl::events.filter(events::dsl::title.eq(new_event_title))
+                            .filter(events::dsl::user_id.eq(shsm_id))
+                            .first::<Event>(connection)
+                            .is_err()
+                        {
+                            for event in users::table
+                                .inner_join(events::table.on(events::dsl::user_id.eq(users::dsl::id)))
+                                .load::<(User, Event)>(connection)?.into_iter().filter_map(|(user, event)|{
+                                if (user.code == class_code) && (event.title == event_title)
+                                {Some(event)}
+                                else
+                                {None}
+                                }).collect::<Vec<Event>>()
+                            {
+                                if !new_event_title.is_empty(){
+                                    diesel::update(&event)
+                                        .set(events::dsl::title.eq(new_event_title))
+                                        .execute(connection)?;
+                                }
+                                if !new_event_description.is_empty(){
                                 diesel::update(&event)
-                                    .set(events::dsl::title.eq(new_event_title))
+                                    .set(events::dsl::description.eq(new_event_description))
                                     .execute(connection)?;
-                            }
-                            if !new_event_description.is_empty(){
-                            diesel::update(&event)
-                                .set(events::dsl::description.eq(new_event_description))
-                                .execute(connection)?;
-                            }
-                            if !new_event_date.is_empty(){
-                            diesel::update(&event)
-                                .set(events::dsl::date.eq(new_event_date))
-                                .execute(connection)?;
-                            }
-                            diesel::update(&event)
-                                .set(events::dsl::certification.eq(new_event_certification))
-                                .execute(connection)?;
+                                }
+                                if !new_event_date.is_empty(){
+                                diesel::update(&event)
+                                    .set(events::dsl::date.eq(new_event_date))
+                                    .execute(connection)?;
+                                }
+                                diesel::update(&event)
+                                    .set(events::dsl::certification.eq(new_event_certification))
+                                    .execute(connection)?;
 
-                            return Ok(true);
+                                return Ok(true);
+                            }
                         }
 
                         return Ok(false);

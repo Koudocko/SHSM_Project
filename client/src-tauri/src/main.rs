@@ -405,13 +405,13 @@ fn sync_elements(page_name: String, window: State<WindowHandle>){
                             document.getElementsByClassName('event-container')[0].innerHTML += `
                               <div class='event'>
                                 <h3 class='event-title'>{}</h3>
-                                <p class='event-date'>Date: {}</p>
                                 <p class='event-certified'>Certified: {}</p>
+                                <p class='event-date'>{}</p>
                                 <p class='event-description'>{}</p>
                                 {button} 
                               </div>
                             `;
-                        ", event.title, event.date, event.certification, event.description))
+                        ", event.title, event.certification, event.date, event.description))
                         .unwrap();
                 }
             }

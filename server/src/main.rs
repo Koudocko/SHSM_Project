@@ -235,7 +235,7 @@ fn handle_connection(stream: &mut (TcpStream, Option<User>))-> Result<(), Box<dy
         "UPDATE_EVENT" =>{
             if let Some(user) = &stream.1{
                 if user.teacher{
-                    if update_event(serde_json::from_str::<Value>(&request.payload)?, user.id)?{
+                    if update_event(serde_json::from_str::<Value>(&request.payload)?, user.id, &user.code)?{
                         String::new()
                     }
                     else{

@@ -12,6 +12,7 @@ document.getElementsByClassName("event-container")[0].addEventListener("click", 
     var _date = e.target.parentNode.querySelector(".event-date").textContent;
     var _description = e.target.parentNode.querySelector(".event-description").textContent;
     var _certification = e.target.parentNode.querySelector(".event-certified").textContent;
+    _certification = _certification.substr(_certification.indexOf(" ") + 1);;
 
     if (e.target.className == "view-signups"){
         const modal = document.querySelector("#view-modal");
@@ -22,9 +23,11 @@ document.getElementsByClassName("event-container")[0].addEventListener("click", 
     }
     else if (e.target.className == "edit-event"){
         document.querySelector("#event_name_e").value = _title;
+        console.log(_date);
         document.querySelector("#event_date_e").value = _date;
         document.querySelector("#event_description_e").value = _description;
-        document.querySelector("#event_certified_e").checked = _certification;
+        console.log(_certification);
+        document.querySelector("#event_certified_e").checked = _certification == 'true';
 
         const modal = document.querySelector("#edit-modal");
         modal.style.display = 'block';
