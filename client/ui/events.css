@@ -64,6 +64,18 @@ h1 {
     color: #8F4B96;
 }
 
+.event-certified {
+    margin-bottom: 20px;
+    font-size: 0.8em;
+    color: #8F4B96;
+}
+
+.event-description {
+    margin-bottom: 20px;
+    font-size: 0.6em;
+    color: #8F4B96;
+}
+
 .event-signup, .view-signups, #add-event-btn {
     background-color: #8F4B96;
     color: white;

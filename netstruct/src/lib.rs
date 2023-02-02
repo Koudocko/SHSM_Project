@@ -370,7 +370,7 @@ pub fn remove_user(payload: Value, course_code: &str)-> Result<(), Box<dyn Error
     Err(Box::new(PlainError::new()))
 }
 
-pub fn update_user(payload: Value, course_code: &str)-> Result<(), Box<dyn Error>>{
+pub fn update_user(payload: Value, course_code: &str)-> Result<bool, Box<dyn Error>>{
     let connection = &mut establish_connection();
 
     if let Some(user_username) = payload["username"].as_str(){
@@ -385,26 +385,30 @@ pub fn update_user(payload: Value, course_code: &str)-> Result<(), Box<dyn Error
                         .map(|byte| u8::try_from(byte.as_u64().unwrap()).unwrap())
                         .collect::<Vec<u8>>();
 
-                    let user = users::dsl::users.filter(users::dsl::username.eq(user_username))
-                        .filter(users::dsl::code.eq(course_code))
-                        .filter(users::dsl::teacher.eq(false))
-                        .first::<User>(connection)?;
+                    if users::dsl::users.filter(users::dsl::username.eq(new_user_username)).first::<User>(connection).is_err(){
+                        let user = users::dsl::users.filter(users::dsl::username.eq(user_username))
+                            .filter(users::dsl::code.eq(course_code))
+                            .filter(users::dsl::teacher.eq(false))
+                            .first::<User>(connection)?;
 
-                    if !new_user_username.is_empty(){
-                        diesel::update(&user)
-                            .set(users::dsl::username.eq(new_user_username))
-                            .execute(connection)?;
-                    }
-                    if new_user_hash.iter().any(|byte| *byte != 0){
-                        diesel::update(&user)
-                            .set(users::dsl::hash.eq(new_user_hash))
-                            .execute(connection)?;
-                        diesel::update(&user)
-                            .set(users::dsl::salt.eq(new_user_salt))
-                            .execute(connection)?;
+                        if !new_user_username.is_empty(){
+                            diesel::update(&user)
+                                .set(users::dsl::username.eq(new_user_username))
+                                .execute(connection)?;
+                        }
+                        if new_user_hash.iter().any(|byte| *byte != 0){
+                            diesel::update(&user)
+                                .set(users::dsl::hash.eq(new_user_hash))
+                                .execute(connection)?;
+                            diesel::update(&user)
+                                .set(users::dsl::salt.eq(new_user_salt))
+                                .execute(connection)?;
+                        }
+
+                        return Ok(true);
                     }
 
-                    return Ok(());
+                    return Ok(false);
                 }
             }
         }
@@ -413,7 +417,7 @@ pub fn update_user(payload: Value, course_code: &str)-> Result<(), Box<dyn Error
     Err(Box::new(PlainError::new()))
 }
 
-pub fn update_event(payload: Value, shsm_id: i32)-> Result<(), Box<dyn Error>>{
+pub fn update_event(payload: Value, shsm_id: i32)-> Result<bool, Box<dyn Error>>{
     let connection = &mut establish_connection();
 
     if let Some(event_title) = payload["title"].as_str(){
@@ -421,24 +425,28 @@ pub fn update_event(payload: Value, shsm_id: i32)-> Result<(), Box<dyn Error>>{
             if let Some(new_event_description) = payload["new_description"].as_str(){
                 if let Some(new_event_date) = payload["new_date"].as_str(){
                     if let Some(new_event_certification) = payload["new_certification"].as_str(){
-                        let event = events::dsl::events.filter(events::dsl::title.eq(event_title))
-                            .filter(events::dsl::user_id.eq(shsm_id))
-                            .first::<Event>(connection)?;
+                        if events::dsl::events.filter(events::dsl::title.eq(new_event_title)).first::<Event>(connection).is_err(){
+                            let event = events::dsl::events.filter(events::dsl::title.eq(event_title))
+                                .filter(events::dsl::user_id.eq(shsm_id))
+                                .first::<Event>(connection)?;
 
-                        diesel::update(&event)
-                            .set(events::dsl::title.eq(new_event_title))
-                            .execute(connection)?;
-                        diesel::update(&event)
-                            .set(events::dsl::description.eq(new_event_description))
-                            .execute(connection)?;
-                        diesel::update(&event)
-                            .set(events::dsl::date.eq(new_event_date))
-                            .execute(connection)?;
-                        diesel::update(&event)
-                            .set(events::dsl::date.eq(new_event_certification))
-                            .execute(connection)?;
+                            diesel::update(&event)
+                                .set(events::dsl::title.eq(new_event_title))
+                                .execute(connection)?;
+                            diesel::update(&event)
+                                .set(events::dsl::description.eq(new_event_description))
+                                .execute(connection)?;
+                            diesel::update(&event)
+                                .set(events::dsl::date.eq(new_event_date))
+                                .execute(connection)?;
+                            diesel::update(&event)
+                                .set(events::dsl::date.eq(new_event_certification))
+                                .execute(connection)?;
 
-                        return Ok(());
+                            return Ok(true);
+                        }
+
+                        return Ok(false);
                     }
                 }
             }
