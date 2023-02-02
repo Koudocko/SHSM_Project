@@ -7,8 +7,8 @@ use netstruct::*;
 use netstruct::models::{NewUser, User, NewEvent};
 use serde_json::{Value, json};
 
-// const SOCKET: &str = "192.168.2.5:7878";
-const SOCKET: &str = "127.0.0.1:7878";
+const SOCKET: &str = "192.168.2.5:7878";
+// const SOCKET: &str = "127.0.0.1:7878";
 
 fn handle_connection(stream: &mut (TcpStream, Option<User>))-> Result<(), Box<dyn Error>> {
     stream.0.set_nonblocking(false).unwrap();
