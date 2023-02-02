@@ -32,6 +32,19 @@ static mut IS_TEACHER: bool = false;
 struct WindowHandle(Mutex<Window>);
 
 #[tauri::command]
+fn remove_announcement(title: String, window: State<WindowHandle>){
+    write_stream(&mut *STREAM.lock().unwrap(), 
+        Package { 
+            header: String::from("REMOVE_ANNOUNCEMENT"), 
+            payload: json!({ "title": title }).to_string()
+        }
+    ).unwrap();
+
+    read_stream(&mut *STREAM.lock().unwrap());
+    sync_elements(String::from("ANNOUNCEMENTS"), window);
+}
+
+#[tauri::command]
 fn update_user(username: String, new_username: String, new_password: String, window: State<WindowHandle>){
     const CREDENTIAL_LEN: usize = digest::SHA512_OUTPUT_LEN;
     let n_iter = NonZeroU32::new(100_000).unwrap();
@@ -427,7 +440,7 @@ async fn main(){
             app.manage(WindowHandle(Mutex::new(app.get_window("main").unwrap())));
             Ok(())
         })
-        .invoke_handler(tauri::generate_handler![create_account, login_account, add_announcement, sync_elements, add_event, remove_user, update_user])
+        .invoke_handler(tauri::generate_handler![create_account, login_account, add_announcement, sync_elements, add_event, remove_user, update_user, remove_announcement])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");
 }
