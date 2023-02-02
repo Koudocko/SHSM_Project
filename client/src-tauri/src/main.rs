@@ -105,10 +105,9 @@ fn get_event_users(title: String, window: State<WindowHandle>){
     if let Some(users) = unpack(&response.payload, "users").as_array(){
         for user in users{
             let user: String = serde_json::from_value(user.clone()).unwrap();
-            println!("WOAH: {user}");
 
             window.0.lock().unwrap()
-                .eval(&format!("document.getElementById('students-container').innerHTML += <p>{}</p>", user))
+                .eval(&format!("document.getElementById('students-container').innerHTML += '<p>{}</p>';", user))
                 .unwrap();
         }
     }
@@ -200,7 +199,7 @@ fn get_user_events(username: String, window: State<WindowHandle>){
             if event.certification{
                 window.0.lock().unwrap()
                     .eval(&format!("
-                        document.getElementById('certifications container').innerHTML += `
+                        document.getElementById('certifications-container').innerHTML += `
                           <span>{} <input class='check' type='checkbox' name='{}' {checked}></span>`;
                     ", event.title, event.title))
                     .unwrap();
@@ -345,7 +344,7 @@ fn sync_elements(page_name: String, window: State<WindowHandle>){
                                       <h2 class='card-title'>{}</h2>
                                       <p class='card-description'>{}</p>
                                       <p class='card-date'>{}</p>
-                                    </div>`;`
+                                    </div>`;
                             ", event.title, event.description, event.date))
                             .unwrap();
                     }

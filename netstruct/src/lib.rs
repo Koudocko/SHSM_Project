@@ -319,22 +319,38 @@ pub fn get_event_users(payload: Value, class_code: &str)-> Result<Vec<String>, B
     if let Some(event_title) = payload["title"].as_str(){
         let course = users::dsl::users.filter(users::dsl::teacher.eq(false))
             .filter(users::dsl::code.eq(class_code))
-            .first::<User>(connection)
-            .unwrap();
+                .first::<User>(connection)
+                .unwrap();
 
-        return Ok(Event::belonging_to(&course)
-            .load::<Event>(connection)
-            .expect("Error loading announcements")
-            .into_iter()
-            .filter_map(|event|{
-                if event.title == event_title{
-                    Some(users::dsl::users.filter(users::dsl::id.eq(event.user_id)).first::<User>(connection).unwrap().username)
-                }
-                else{
-                    None
-                }
-            })
-            .collect());
+        let data: Vec<(String, bool)> = users::table
+            .inner_join(events::table.on(users::dsl::code.eq(class_code)))
+            .select((users::dsl::username, users::dsl::teacher))
+            .load(connection).unwrap();
+
+        let data = data.into_iter().filter_map(|user|{
+            if !user.1
+            {Some(user.0)}
+            else
+            {None}
+        }).collect::<Vec<String>>();
+
+        data.iter().for_each(|user| println!("USER FOUND{user}"));
+        return Ok(data);
+
+        // return Ok(Event::belonging_to(&course)
+        //     .load::<Event>(connection)
+        //     .expect("Error loading announcements")
+        //     .into_iter()
+        //     .filter_map(|event|{
+        //         println!("EVENT FOUND{}", event.title);
+        //         if event.title == event_title{
+        //             Some(users::dsl::users.filter(users::dsl::id.eq(event.user_id)).first::<User>(connection).unwrap().username)
+        //         }
+        //         else{
+        //             None
+        //         }
+        //     })
+        //     .collect());
     }
 
     Err(Box::new(PlainError::new()))
