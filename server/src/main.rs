@@ -4,7 +4,7 @@ use std::{
     thread, error::Error
 };
 use netstruct::*;
-use netstruct::models::{NewUser, User};
+use netstruct::models::{NewUser, User, NewEvent};
 use serde_json::{Value, json};
 
 // const SOCKET: &str = "192.168.2.5:7878";
@@ -109,6 +109,24 @@ fn handle_connection(stream: &mut (TcpStream, Option<User>))-> Result<(), Box<dy
                return Err(Box::new(PlainError::new()))
             }
         }
+        "GET_USER_EVENTS_CL" =>{
+            if let Some(user) = &stream.1{
+                if user.teacher{
+                    if let Some(username) = unpack(&request.payload, "username").as_str(){
+                        json!({ "events": get_user_events(username) }).to_string()
+                    }
+                    else{
+                       return Err(Box::new(PlainError::new()))
+                    }
+                }
+                else{
+                   return Err(Box::new(PlainError::new()))
+                }
+            }
+            else{
+               return Err(Box::new(PlainError::new()))
+            }
+        }
         "GET_SHSM_EVENTS" =>{
             if let Some(user) = &stream.1{
                 json!({ "events": get_shsm_events(&user.code) }).to_string()
@@ -120,7 +138,7 @@ fn handle_connection(stream: &mut (TcpStream, Option<User>))-> Result<(), Box<dy
         "ADD_SHSM_EVENT" =>{
             if let Some(user) = &stream.1{
                 if user.teacher{
-                    if add_shsm_event(serde_json::from_str::<Value>(&request.payload)?, user.id)?{
+                    if add_shsm_event(serde_json::from_str::<NewEvent>(&request.payload)?, user.id){
                         String::new()
                     }
                     else{

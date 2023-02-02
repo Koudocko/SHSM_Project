@@ -8,7 +8,7 @@ use std::{
     sync::Mutex,
 };
 use netstruct::*;
-use netstruct::models::{NewUser, Announcement, Event};
+use netstruct::models::{NewUser, Announcement, Event, NewEvent};
 use ring::rand::SecureRandom;
 use ring::{digest, pbkdf2, rand};
 use std::num::NonZeroU32;
@@ -22,14 +22,130 @@ use tauri::{
 use serde_json::json;
 
 static mut CURRENT_PAGE: String = String::new();
-const SOCKET: &str = "als-kou.ddns.net:7878";
-//const SOCKET: &str = "127.0.0.1:7878";
+// const SOCKET: &str = "als-kou.ddns.net:7878";
+const SOCKET: &str = "127.0.0.1:7878";
 static STREAM: Lazy<Mutex<TcpStream>> = Lazy::new(||{
     Mutex::new(TcpStream::connect(SOCKET).unwrap())
 });
 static mut IS_TEACHER: bool = false; 
 
 struct WindowHandle(Mutex<Window>);
+
+#[tauri::command]
+fn add_shsm_event(title: String, description: String, date: String, certification: bool, window: State<WindowHandle>){
+    let new_event = NewEvent{
+        title,
+        description,
+        date,
+        certification,
+        completed: false,
+        user_id: 0
+    };
+
+    write_stream(&mut *STREAM.lock().unwrap(), 
+        Package { 
+            header: String::from("CERTIFY_USER"), 
+            payload: serde_json::to_string(&new_event).unwrap()
+        }
+    ).unwrap();
+
+    read_stream(&mut *STREAM.lock().unwrap());
+    sync_elements(String::from("EVENTS"), window);
+}
+
+#[tauri::command]
+fn certify_user(username: String, certification_name: String, checked: bool, window: State<WindowHandle>){
+    write_stream(&mut *STREAM.lock().unwrap(), 
+        Package { 
+            header: String::from("CERTIFY_USER"), 
+            payload: json!({ "username": username, "title": certification_name, "completed": checked }).to_string()
+        }
+    ).unwrap();
+
+    read_stream(&mut *STREAM.lock().unwrap());
+    sync_elements(String::from("CLASSLIST"), window);
+}
+
+#[tauri::command]
+fn get_user_events(username: String, window: State<WindowHandle>){
+    write_stream(&mut *STREAM.lock().unwrap(), 
+        Package { 
+            header: String::from("GET_USER_EVENTS"), 
+            payload: json!({ "username": username }).to_string()
+        }
+    ).unwrap();
+
+    let response = read_stream(&mut *STREAM.lock().unwrap());
+
+    window.0.lock().unwrap()
+        .eval("document.getElementById('certifications-container').innerHTML = '';")
+        .unwrap();
+
+    if let Some(events) = unpack(&response.payload, "events").as_array(){
+        for event in events{
+            let event: Event = serde_json::from_value(event.clone()).unwrap();
+
+            let checked = if event.completed
+                {"checked"}
+                else
+                {""};
+            if event.certification{
+                window.0.lock().unwrap()
+                    .eval(&format!("
+                        document.getElementById('certifications container').innerHTML += `
+                          <span>{} <input class='check' type='checkbox' name='{}' {checked}></span>`;
+                    ", event.title, event.title))
+                    .unwrap();
+            }
+        }
+    }
+    sync_elements(String::from("CLASSLIST"), window);
+}
+
+#[tauri::command]
+fn remove_announcement(title: String, window: State<WindowHandle>){
+    write_stream(&mut *STREAM.lock().unwrap(), 
+        Package { 
+            header: String::from("REMOVE_ANNOUNCEMENT"), 
+            payload: json!({ "title": title }).to_string()
+        }
+    ).unwrap();
+
+    read_stream(&mut *STREAM.lock().unwrap());
+    sync_elements(String::from("ANNOUNCEMENTS"), window);
+}
+
+#[tauri::command]
+fn update_user(username: String, new_username: String, new_password: String, window: State<WindowHandle>){
+    const CREDENTIAL_LEN: usize = digest::SHA512_OUTPUT_LEN;
+    let n_iter = NonZeroU32::new(100_000).unwrap();
+    let rng = rand::SystemRandom::new();
+
+    let mut salt_key = [0u8; CREDENTIAL_LEN];
+    let mut pbkdf2_hash = [0u8; CREDENTIAL_LEN];
+
+    if !new_password.is_empty(){
+        rng.fill(&mut salt_key).unwrap();
+
+        pbkdf2::derive(
+            pbkdf2::PBKDF2_HMAC_SHA512,
+            n_iter,
+            &salt_key,
+            new_password.as_bytes(),
+            &mut pbkdf2_hash,
+        );
+    }
+
+    write_stream(&mut *STREAM.lock().unwrap(), 
+        Package { 
+            header: String::from("UPDATE_USER"), 
+            payload: json!({ "username": username, "new_username": new_username, "new_hash": pbkdf2_hash.to_vec(), "new_salt": salt_key.to_vec() }).to_string()
+        }
+    ).unwrap();
+
+    read_stream(&mut *STREAM.lock().unwrap());
+    sync_elements(String::from("CLASSLIST"), window);
+}
 
 #[tauri::command]
 fn remove_user(username: String, window: State<WindowHandle>){
@@ -40,7 +156,7 @@ fn remove_user(username: String, window: State<WindowHandle>){
         }
     ).unwrap();
 
-    let _ = read_stream(&mut *STREAM.lock().unwrap());
+    read_stream(&mut *STREAM.lock().unwrap());
     sync_elements(String::from("CLASSLIST"), window);
 }
 
@@ -232,6 +348,7 @@ fn sync_elements(page_name: String, window: State<WindowHandle>){
                                 <div class='title'>{}</div>
                                 <div class='description'>{}</div>
                                 <div class='date'>{}</div>
+                                <button class='delete'>delete</button>
                             </div>`;
                             document.getElementById('posted-announcement-container').innerHTML += announcement;
                         ", announcement.title, announcement.description, announcement.date))
@@ -394,7 +511,7 @@ async fn main(){
             app.manage(WindowHandle(Mutex::new(app.get_window("main").unwrap())));
             Ok(())
         })
-        .invoke_handler(tauri::generate_handler![create_account, login_account, add_announcement, sync_elements, add_event, remove_user])
+        .invoke_handler(tauri::generate_handler![create_account, login_account, add_announcement, sync_elements, add_event, remove_user, update_user, remove_announcement, get_user_events, certify_user, add_shsm_event])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");
 }
